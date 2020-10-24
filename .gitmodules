@@ -1,0 +1,6 @@
+[submodule "wren"]
+	path = wren
+	url = https://github.com/wren-lang/wren.git
+[submodule "nanovg"]
+	path = nanovg
+	url = https://github.com/memononen/nanovg.git
