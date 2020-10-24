@@ -1,0 +1,1 @@
+./wrench.exe examples/podcast_player/main.wren
