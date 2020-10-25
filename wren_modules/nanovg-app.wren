@@ -41,7 +41,9 @@ class NanovgApp {
 
   update_(){
     while(SDL.pollEvent(_event)){
-      // nop
+      if(_event.type == SdlEventType.Keydown || _event.type == SdlEventType.Keyup){
+        onKey(_event.key_sym, _event.type == SdlEventType.Keyup)
+      }
     }
 
     var t = SDL.ticks / 1000
@@ -72,6 +74,10 @@ class NanovgApp {
   }
 
   update(ctx){
+
+  }
+
+  onKey(sym, isUp){
 
   }
 }
