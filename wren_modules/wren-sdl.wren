@@ -21,6 +21,10 @@ foreign class SdlEvent {
   }
 
   foreign type
+  foreign key_isRepeat
+  foreign key_sym
+  foreign touch_x
+  foreign touch_y
 }
 
 class SDL {
@@ -159,12 +163,12 @@ class SdlHint {
   static QtwaylandWindowFlags { "SDL_QTWAYLAND_WINDOW_FLAGS" }
   static ThreadStackSize { "SDL_THREAD_STACK_SIZE" }
   static VideoHighdpiDisabled { "SDL_VIDEO_HIGHDPI_DISABLED" }
-  static MacCtrlClickEmulateRightClick { "SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK" }
+  static MacCtrlClickEmulateRightClick { "SDL_MAcCtrl_CLICK_EMULATE_RIGHT_CLICK" }
   static VideoWinD3dcompiler { "SDL_VIDEO_WIN_D3DCOMPILER" }
   static VideoWindowSharePixelFormat { "SDL_VIDEO_WINDOW_SHARE_PIXEL_FORMAT" }
   static WinrtPrivacyPolicyUrl { "SDL_WINRT_PRIVACY_POLICY_URL" }
-  static VideoMacFullscreenSpaces { "SDL_VIDEO_MAC_FULLSCREEN_SPACES" }
-  static MacBackgroundApp { "SDL_MAC_BACKGROUND_APP" }
+  static VideoMacFullscreenSpaces { "SDL_VIDEO_MAcFullscreen_SPACES" }
+  static MacBackgroundApp { "SDL_MAcBackground_APP" }
   static AndroidApkExpansionMainFileVersion { "SDL_ANDROID_APK_EXPANSION_MAIN_FILE_VERSION" }
   static AndroidApkExpansionPatchFileVersion { "SDL_ANDROID_APK_EXPANSION_PATCH_FILE_VERSION" }
   static ImeInternalEditing { "SDL_IME_INTERNAL_EDITING" }
@@ -305,4 +309,243 @@ class SdlEventType {
   /* Render Events */
   static Rendertargetsreset { 0x2000 } 
   static Renderdevicereset { 0x2001 } 
+}
+
+class SdlKeyCode {
+  static Unknown { 0 }
+  static Backspace { 8 }
+  static Tab { 9 }
+  static Return { 13 }
+  static Escape { 27 }
+  static Space { 32 }
+  static Exclaim { 33 }
+  static Quotedbl { 34 }
+  static Hash { 35 }
+  static Dollar { 36 }
+  static Percent { 37 }
+  static Ampersand { 38 }
+  static Quote { 39 }
+  static Leftparen { 40 }
+  static Rightparen { 41 }
+  static Asterisk { 42 }
+  static Plus { 43 }
+  static Comma { 44 }
+  static Minus { 45 }
+  static Period { 46 }
+  static Slash { 47 }
+  static Num0 { 48 }
+  static Num1 { 49 }
+  static Num2 { 50 }
+  static Num3 { 51 }
+  static Num4 { 52 }
+  static Num5 { 53 }
+  static Num6 { 54 }
+  static Num7 { 55 }
+  static Num8 { 56 }
+  static Num9 { 57 }
+  static Colon { 58 }
+  static Semicolon { 59 }
+  static Less { 60 }
+  static Equals { 61 }
+  static Greater { 62 }
+  static Question { 63 }
+  static At { 64 }
+  static Leftbracket { 91 }
+  static Backslash { 92 }
+  static Rightbracket { 93 }
+  static Caret { 94 }
+  static Underscore { 95 }
+  static Backquote { 96 }
+  static A { 97 }
+  static B { 98 }
+  static C { 99 }
+  static D { 100 }
+  static E { 101 }
+  static F { 102 }
+  static G { 103 }
+  static H { 104 }
+  static I { 105 }
+  static J { 106 }
+  static K { 107 }
+  static L { 108 }
+  static M { 109 }
+  static N { 110 }
+  static O { 111 }
+  static P { 112 }
+  static Q { 113 }
+  static R { 114 }
+  static S { 115 }
+  static T { 116 }
+  static U { 117 }
+  static V { 118 }
+  static W { 119 }
+  static X { 120 }
+  static Y { 121 }
+  static Z { 122 }
+  static Delete { 127 }
+  static Capslock { 1073741881 }
+  static F1 { 1073741882 }
+  static F2 { 1073741883 }
+  static F3 { 1073741884 }
+  static F4 { 1073741885 }
+  static F5 { 1073741886 }
+  static F6 { 1073741887 }
+  static F7 { 1073741888 }
+  static F8 { 1073741889 }
+  static F9 { 1073741890 }
+  static F10 { 1073741891 }
+  static F11 { 1073741892 }
+  static F12 { 1073741893 }
+  static Printscreen { 1073741894 }
+  static Scrolllock { 1073741895 }
+  static Pause { 1073741896 }
+  static Insert { 1073741897 }
+  static Home { 1073741898 }
+  static Pageup { 1073741899 }
+  static End { 1073741901 }
+  static Pagedown { 1073741902 }
+  static Right { 1073741903 }
+  static Left { 1073741904 }
+  static Down { 1073741905 }
+  static Up { 1073741906 }
+  static Numlockclear { 1073741907 }
+  static KpDivide { 1073741908 }
+  static KpMultiply { 1073741909 }
+  static KpMinus { 1073741910 }
+  static KpPlus { 1073741911 }
+  static KpEnter { 1073741912 }
+  static Kp1 { 1073741913 }
+  static Kp2 { 1073741914 }
+  static Kp3 { 1073741915 }
+  static Kp4 { 1073741916 }
+  static Kp5 { 1073741917 }
+  static Kp6 { 1073741918 }
+  static Kp7 { 1073741919 }
+  static Kp8 { 1073741920 }
+  static Kp9 { 1073741921 }
+  static Kp0 { 1073741922 }
+  static KpPeriod { 1073741923 }
+  static Application { 1073741925 }
+  static Power { 1073741926 }
+  static KpEquals { 1073741927 }
+  static F13 { 1073741928 }
+  static F14 { 1073741929 }
+  static F15 { 1073741930 }
+  static F16 { 1073741931 }
+  static F17 { 1073741932 }
+  static F18 { 1073741933 }
+  static F19 { 1073741934 }
+  static F20 { 1073741935 }
+  static F21 { 1073741936 }
+  static F22 { 1073741937 }
+  static F23 { 1073741938 }
+  static F24 { 1073741939 }
+  static Execute { 1073741940 }
+  static Help { 1073741941 }
+  static Menu { 1073741942 }
+  static Select { 1073741943 }
+  static Stop { 1073741944 }
+  static Again { 1073741945 }
+  static Undo { 1073741946 }
+  static Cut { 1073741947 }
+  static Copy { 1073741948 }
+  static Paste { 1073741949 }
+  static Find { 1073741950 }
+  static Mute { 1073741951 }
+  static Volumeup { 1073741952 }
+  static Volumedown { 1073741953 }
+  static KpComma { 1073741957 }
+  static KpEqualsas400 { 1073741958 }
+  static Alterase { 1073741977 }
+  static Sysreq { 1073741978 }
+  static Cancel { 1073741979 }
+  static Clear { 1073741980 }
+  static Prior { 1073741981 }
+  static Return2 { 1073741982 }
+  static Separator { 1073741983 }
+  static Out { 1073741984 }
+  static Oper { 1073741985 }
+  static Clearagain { 1073741986 }
+  static Crsel { 1073741987 }
+  static Exsel { 1073741988 }
+  static Kp00 { 1073742000 }
+  static Kp000 { 1073742001 }
+  static Thousandsseparator { 1073742002 }
+  static Decimalseparator { 1073742003 }
+  static Currencyunit { 1073742004 }
+  static Currencysubunit { 1073742005 }
+  static KpLeftparen { 1073742006 }
+  static KpRightparen { 1073742007 }
+  static KpLeftbrace { 1073742008 }
+  static KpRightbrace { 1073742009 }
+  static KpTab { 1073742010 }
+  static KpBackspace { 1073742011 }
+  static KpA { 1073742012 }
+  static KpB { 1073742013 }
+  static KpC { 1073742014 }
+  static KpD { 1073742015 }
+  static KpE { 1073742016 }
+  static KpF { 1073742017 }
+  static KpXor { 1073742018 }
+  static KpPower { 1073742019 }
+  static KpPercent { 1073742020 }
+  static KpLess { 1073742021 }
+  static KpGreater { 1073742022 }
+  static KpAmpersand { 1073742023 }
+  static KpDblampersand { 1073742024 }
+  static KpVerticalbar { 1073742025 }
+  static KpDblverticalbar { 1073742026 }
+  static KpColon { 1073742027 }
+  static KpHash { 1073742028 }
+  static KpSpace { 1073742029 }
+  static KpAt { 1073742030 }
+  static KpExclam { 1073742031 }
+  static KpMemstore { 1073742032 }
+  static KpMemrecall { 1073742033 }
+  static KpMemclear { 1073742034 }
+  static KpMemadd { 1073742035 }
+  static KpMemsubtract { 1073742036 }
+  static KpMemmultiply { 1073742037 }
+  static KpMemdivide { 1073742038 }
+  static KpPlusminus { 1073742039 }
+  static KpClear { 1073742040 }
+  static KpClearentry { 1073742041 }
+  static KpBinary { 1073742042 }
+  static KpOctal { 1073742043 }
+  static KpDecimal { 1073742044 }
+  static KpHexadecimal { 1073742045 }
+  static Lctrl { 1073742048 }
+  static Lshift { 1073742049 }
+  static Lalt { 1073742050 }
+  static Lgui { 1073742051 }
+  static Rctrl { 1073742052 }
+  static Rshift { 1073742053 }
+  static Ralt { 1073742054 }
+  static Rgui { 1073742055 }
+  static Mode { 1073742081 }
+  static Audionext { 1073742082 }
+  static Audioprev { 1073742083 }
+  static Audiostop { 1073742084 }
+  static Audioplay { 1073742085 }
+  static Audiomute { 1073742086 }
+  static Mediaselect { 1073742087 }
+  static Www { 1073742088 }
+  static Mail { 1073742089 }
+  static Calculator { 1073742090 }
+  static Computer { 1073742091 }
+  static AcSearch { 1073742092 }
+  static AcHome { 1073742093 }
+  static AcBack { 1073742094 }
+  static AcForward { 1073742095 }
+  static AcStop { 1073742096 }
+  static AcRefresh { 1073742097 }
+  static AcBookmarks { 1073742098 }
+  static Brightnessdown { 1073742099 }
+  static Brightnessup { 1073742100 }
+  static Displayswitch { 1073742101 }
+  static Kbdillumtoggle { 1073742102 }
+  static Kbdillumdown { 1073742103 }
+  static Kbdillumup { 1073742104 }
+  static Eject { 1073742105 }
+  static Sleep { 1073742106 }
 }

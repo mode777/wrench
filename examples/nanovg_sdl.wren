@@ -1,11 +1,11 @@
-import "wren-sdl" for SDL, SdlWindow, SdlGlContext, SdlWindowFlag, SdlHint, SdlGlAttribute, SdlGlProfile, SdlEvent, SdlEventType
+import "wren-sdl" for SDL, SdlWindow, SdlGlContext, SdlWindowFlag, SdlHint, SdlGlAttribute, SdlGlProfile, SdlEvent, SdlEventType, SdlKeyCode
 import "wren-gles2" for ClearFlag, GL, EnableCap, BlendFacDst, BlendFacSrc, ErrorCode
 import "wren-nanovg" for NvgContext, NvgColor, CreateFlags
 
 import "./examples/nvgdemo" for NvgDemo
 
 var WIDTH = 800
-var HEIGHT = 600
+var HEIGHT = 480
 
 SDL.setHint(SdlHint.OpenglEsDriver, "1")
 SDL.setAttribute(SdlGlAttribute.ContextMajorVersion, 2)
@@ -31,8 +31,16 @@ var Premult = false
 var ev = SdlEvent.new()
 
 SDL.runLoop(Fn.new {
+  var quit = false
   while(SDL.pollEvent(ev)){
-    // nop
+    if(ev.type == SdlEventType.Keydown){
+      if(ev.key_sym == SdlKeyCode.Escape) quit = true
+      System.print(ev.key_sym)
+    }
+    if(ev.type == SdlEventType.Fingerdown){
+      System.print("Fingerdown %(ev.touch_x) %(ev.touch_y)")
+    }
+    if(ev.type == SdlEventType.Quit) quit = true
   }
 
   var t = SDL.ticks / 1000
@@ -65,8 +73,9 @@ SDL.runLoop(Fn.new {
   if(err != ErrorCode.NO_ERROR){
     System.print("GL Error:" + err)
   }
+
   System.gc()
-  return ev.type != SdlEventType.Quit
+  return !quit
 })
 
 

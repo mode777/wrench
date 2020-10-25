@@ -100,6 +100,28 @@ static void wren_sdl_SdlEvent_type(WrenVM* vm){
   wrenSetSlotDouble(vm, 0, ev->type);
 }
 
+static void wren_sdl_SdlEvent_key_isRepeat(WrenVM* vm){
+  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotBool(vm, 0, ev->key.repeat > 0);
+}
+
+static void wren_sdl_SdlEvent_key_sym(WrenVM* vm){
+  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotDouble(vm, 0, (double)ev->key.keysym.sym);
+}
+
+static void wren_sdl_SdlEvent_touch_x(WrenVM* vm){
+  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotDouble(vm, 0, (double)ev->tfinger.x);
+}
+
+static void wren_sdl_SdlEvent_touch_y(WrenVM* vm){
+  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotDouble(vm, 0, (double)ev->tfinger.y);
+}
+
+
+
 
 static void wren_sdl_SDL_delay_1(WrenVM* vm){
   int delay = wrenGetSlotDouble(vm,1);
@@ -165,6 +187,10 @@ void wrt_plugin_init(){
 
   wrt_bind_class("wren-sdl.SdlEvent", wren_sdl_SdlEvent_allocate, wren_sdl_SdlEvent_finalize);
   wrt_bind_method("wren-sdl.SdlEvent.type", wren_sdl_SdlEvent_type);
+  wrt_bind_method("wren-sdl.SdlEvent.key_isRepeat", wren_sdl_SdlEvent_key_isRepeat);
+  wrt_bind_method("wren-sdl.SdlEvent.key_sym", wren_sdl_SdlEvent_key_sym);
+  wrt_bind_method("wren-sdl.SdlEvent.touch_x", wren_sdl_SdlEvent_touch_x);
+  wrt_bind_method("wren-sdl.SdlEvent.touch_y", wren_sdl_SdlEvent_touch_y);
 
   wrt_bind_method("wren-sdl.SDL.delay(_)", wren_sdl_SDL_delay_1);
   wrt_bind_method("wren-sdl.SDL.ticks", wren_sdl_SDL_ticks);
