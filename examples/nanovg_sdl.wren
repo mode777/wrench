@@ -2,9 +2,9 @@ import "wren-sdl" for SDL, SdlWindow, SdlGlContext, SdlWindowFlag, SdlHint, SdlG
 import "wren-gles2" for ClearFlag, GL, EnableCap, BlendFacDst, BlendFacSrc, ErrorCode
 import "wren-nanovg" for NvgContext, NvgColor, CreateFlags
 
-import ".examples/nvgdemo" for NvgDemo
+import "./examples/nvgdemo" for NvgDemo
 
-var WIDTH = 1000
+var WIDTH = 800
 var HEIGHT = 600
 
 SDL.setHint(SdlHint.OpenglEsDriver, "1")
@@ -65,7 +65,7 @@ SDL.runLoop(Fn.new {
   if(err != ErrorCode.NO_ERROR){
     System.print("GL Error:" + err)
   }
-
+  System.gc()
   return ev.type != SdlEventType.Quit
 })
 
