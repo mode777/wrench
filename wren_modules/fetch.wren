@@ -22,6 +22,11 @@ class FetchClient {
     addHandle_(handle, fn)
   }
 
+  download(url, path, fn){
+    var handle = CurlHandle.download(url, path)
+    addHandle_(handle, fn)
+  }
+
   addHandle_(handle, fn){
     _requests = _requests+1
     _lookup[handle.id] = fn
