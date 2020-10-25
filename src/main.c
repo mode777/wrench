@@ -271,7 +271,11 @@ static char* load_module_fn(WrenVM* vm, const char* name){
     strcpy(strbuffer, "./wren_modules/");
     strcat(strbuffer, name);
     strcpy(dllbuffer, strbuffer);
+    #if defined(_WIN32)
     strcat(dllbuffer, ".dll");
+    #elif defined(__unix__)
+    strcat(dllbuffer, ".so");
+    #endif
     load_plugin(dllbuffer);
     strcat(strbuffer, ".wren");
   }

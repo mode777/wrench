@@ -10,15 +10,15 @@ OBJ_NVG_DEMO=demo.o example_gles2.o nanovg.o
 
 INCLUDES =-I./wren/src/include -I./wren/src/optional -I./wren/src/vm -I./include -I./include/linux -I./include/common -I./nanovg/src
 
-DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf -lm 
+DLLFLAGS =-shared -Wl,-no-undefined -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf -lm
 
 VPATH = ./src ./wren/src/optional ./wren/src/vm ./nanovg/src
 
 wrench: $(OBJ) $(OBJ_WREN)
-	gcc -o $@ $(OBJ) $(OBJ_WREN)
+	gcc -o $@ $(OBJ) $(OBJ_WREN) -ldl -lm
 
 wren-sdl.so: $(OBJ_SDL)
-	gcc -o $@ $(OBJ_SDL) $(DLLFLAGS) -lSDL2 -lbrcmEGL
+	gcc -o $@ $(OBJ_SDL) $(DLLFLAGS) -lSDL2 -lbrcmEGL -lbrcmGLESv2
 	cp $@ ./wren_modules/$@
 
 json.so: $(OBJ_JSON)
@@ -42,10 +42,10 @@ wren-rapidxml.so: wren_rapidxml.o
 	cp $@ ./wren_modules/$@
 
 wren_rapidxml.o: wren_rapidxml.cpp
-	g++ -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -DDEBUG -fpermissive
+	g++ -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -fpermissive
 
 %.o: %.c
-	gcc -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -DDEBUG
+	gcc -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES)
 
 clean:
 	rm -f *.{o,bc,exe}

@@ -45,7 +45,7 @@ void* wrt_dlopen(const char *pcDllname)
       return handle;
     #elif defined(__GNUC__)
       void* handle = dlopen(pcDllname, RTLD_NOW);
-      //if(handle == NULL) printf("Error loading %s. Reason %s\n", pcDllname, dlerror());
+      if(handle == NULL) printf("Error loading %s. Reason %s\n", pcDllname, dlerror());
       return handle;
     #endif
 }

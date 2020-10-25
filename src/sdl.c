@@ -1,6 +1,7 @@
 #include "./wrt_plugin.h"
 #include <SDL2/SDL.h>
 
+
 static WrenHandle* loopHandle;
 static WrenHandle* callHandle_0;
 

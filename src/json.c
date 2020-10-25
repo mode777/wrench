@@ -139,7 +139,7 @@ static void JSONParser_allocate(WrenVM* vm){
   parserData->parser = pglJsonCreateParser(content);  
   parserData->vm = vm;
   if(parserData->parser == NULL){
-    pgl_wren_runtime_error(vm, "Invalid JSON");
+    wren_runtime_error(vm, "Invalid JSON");
   }
 }
 
@@ -169,7 +169,7 @@ static void JSONParser_getValue_0(WrenVM* vm){
         wrenSetSlotNull(vm, 0);
         break;
       default:
-        pgl_wren_runtime_error(vm, "Current token is not a primitive value type");
+        wren_runtime_error(vm, "Current token is not a primitive value type");
         break;
   } 
 }

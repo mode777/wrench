@@ -1,5 +1,6 @@
 #include "./wrt_plugin.h"
 #include <curl/curl.h>
+#include <stdlib.h>
 #include <time.h>
 
 #ifdef _WIN32
