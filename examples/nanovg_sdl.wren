@@ -4,7 +4,7 @@ import "wren-nanovg" for NvgContext, NvgColor, CreateFlags
 
 import "./examples/nvgdemo" for NvgDemo
 
-var WIDTH = 1000
+var WIDTH = 800
 var HEIGHT = 600
 
 SDL.setHint(SdlHint.OpenglEsDriver, "1")
