@@ -64,8 +64,12 @@ foreign class NvgImage{
   construct fromMemory(ctx, mem){
     fromMemory_(ctx, mem)
   }
+  construct fromImageData(ctx, id){
+    fromImageData_(ctx, id)
+  }
   foreign fromFile_(ctx,path)
   foreign fromMemory_(ctx,mem)
+  foreign fromImageData_(ctx,id)
   foreign width
   foreign height
 }
@@ -129,8 +133,6 @@ foreign class NvgContext {
   text(x,y,text) { 
     this.text(x,y,text,0,-1)
   }
-
-
   foreign strokeWidth(w)
   foreign strokeColor(nvgColor)
   foreign stroke()
@@ -141,6 +143,25 @@ foreign class NvgContext {
   foreign scissor(x,y,w,h)
   foreign intersectScissor(x,y,w,h)
   foreign resetScissor()
+}
+
+foreign class ImageData {
+  construct fromFile(path){
+    fromFile_(path)
+  }
+  construct fromMemory(data){
+    fromMemory_(data)
+  }
+  construct new(w,h){
+    init_(w,h)
+  }
+
+  foreign init_(w,h)
+  foreign fromFile_(p)
+  foreign fromMemory_(d)
+  foreign resize(w,h)
+  foreign width
+  foreign height
 }
 
 class TextAlign {

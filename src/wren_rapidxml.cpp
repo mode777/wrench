@@ -8,12 +8,22 @@ extern "C" {
 using namespace rapidxml;
 
 #define FOREIGN_CLASS(WREN, C, INIT, DELETE) \
+\
+typedef struct {\
+  C* obj;\
+  WrenHandle* handle;\
+  WrenVM* vm;\
+} WREN##Data;\
+\
 static void wren_rapidxml_##WREN##_allocate(WrenVM* vm){ \
-  C** ptr = (C**)wrenSetSlotNewForeign(vm, 0, 0, sizeof(C*)); \
+  WREN##Data* ptr = (WREN##Data*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(WREN##Data)); \
+  ptr->vm = vm;\
   INIT\
 } \
 static void wren_rapidxml_##WREN##_delete(void* data){ \
-  C** ptr = (C**)data; \
+  /*puts("Delete " #WREN);*/\
+  WREN##Data* ptr = (WREN##Data*)data; \
+  if(ptr->handle != NULL) wrenReleaseHandle(ptr->vm, ptr->handle);\
   DELETE \
 } 
 
@@ -22,133 +32,137 @@ static WrenHandle* xmlAttributeClass;
 
 FOREIGN_CLASS(XmlAttribute, xml_attribute<>,,)
 
-static xml_attribute<>** create_attribute(WrenVM* vm){
+static XmlAttributeData* create_attribute_data(WrenVM* vm, xml_attribute<>* attr){
+  WrenHandle* handle = wrenGetSlotHandle(vm, 0);
   wrenSetSlotHandle(vm, 0, xmlAttributeClass);
   wren_rapidxml_XmlAttribute_allocate(vm);
-  return (xml_attribute<>**)wrenGetSlotForeign(vm, 0);
+  XmlAttributeData* new_data = (XmlAttributeData*)wrenGetSlotForeign(vm, 0);
+  new_data->handle = handle;
+  new_data->obj = attr;
+  return new_data;
 }
 
 static void wren_rapidxml_XmlAttribute_name_0(WrenVM* vm){
-  xml_attribute<>* attribute = *(xml_attribute<>**)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotString(vm, 0, attribute->name());
+  XmlAttributeData* data = (XmlAttributeData*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotString(vm, 0, data->obj->name());
 }
 
 static void wren_rapidxml_XmlAttribute_value_0(WrenVM* vm){
-  xml_attribute<>* attribute = *(xml_attribute<>**)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotString(vm, 0, attribute->value());
+  XmlAttributeData* data = (XmlAttributeData*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotString(vm, 0, data->obj->value());
 }
 
 static void wren_rapidxml_XmlAttribute_nextAttribute_0(WrenVM* vm){
-  xml_attribute<>* attribute = *(xml_attribute<>**)wrenGetSlotForeign(vm, 0);
-  xml_attribute<>* next = attribute->next_attribute();
+  XmlAttributeData* data = (XmlAttributeData*)wrenGetSlotForeign(vm, 0);
+  xml_attribute<>* next = data->obj->next_attribute();
   if(next == NULL){
     wrenSetSlotNull(vm, 0);
   }
   else {
-    xml_attribute<>** attributePtr = create_attribute(vm);
-    *attributePtr = next;
+    create_attribute_data(vm, next);
   }  
 }
 
 FOREIGN_CLASS(XmlNode, xml_node<>,,)
 
-static xml_node<>** create_node(WrenVM* vm){
+static XmlNodeData* create_node_data(WrenVM* vm, xml_node<>* node){
+  WrenHandle* handle = wrenGetSlotHandle(vm, 0);
   wrenSetSlotHandle(vm, 0, xmlNodeClass);
   wren_rapidxml_XmlNode_allocate(vm);
-  return (xml_node<>**)wrenGetSlotForeign(vm, 0);
+  XmlNodeData* new_data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
+  new_data->handle = handle;
+  new_data->obj = node;
+  return new_data;
 }
 
 static void wren_rapidxml_XmlNode_name_0(WrenVM* vm){
-  xml_node<>* node = *(xml_node<>**)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotString(vm, 0, node->name());
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotString(vm, 0, data->obj->name());
 }
 
 static void wren_rapidxml_XmlNode_value_0(WrenVM* vm){
-  xml_node<>* node = *(xml_node<>**)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotString(vm, 0, node->value());
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotString(vm, 0, data->obj->value());
 }
 
 static void wren_rapidxml_XmlNode_firstNode_0(WrenVM* vm){
-  xml_node<>* node = *(xml_node<>**)wrenGetSlotForeign(vm, 0);
-  xml_node<>* first = node->first_node();
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
+  xml_node<>* first = data->obj->first_node();
   if(first == NULL){
     wrenSetSlotNull(vm, 0);
   }
   else {
-    xml_node<>** nodePtr = create_node(vm);
-    *nodePtr = first;
+    create_node_data(vm, first);
   }  
 }
 
 static void wren_rapidxml_XmlNode_firstNode_1(WrenVM* vm){
-  xml_node<>* node = *(xml_node<>**)wrenGetSlotForeign(vm, 0);
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
   char* str = (char*)wrenGetSlotString(vm, 1);
-  xml_node<>* first = node->first_node(str);
+  xml_node<>* first = data->obj->first_node(str);
   if(first == NULL){
     wrenSetSlotNull(vm, 0);
   }
   else {
-    xml_node<>** nodePtr = create_node(vm);
-    *nodePtr = first;
+    create_node_data(vm, first);
   }  
 }
 
 static void wren_rapidxml_XmlNode_nextSibling_0(WrenVM* vm){
-  xml_node<>* node = *(xml_node<>**)wrenGetSlotForeign(vm, 0);
-  xml_node<>* next = node->next_sibling();
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
+  xml_node<>* next = data->obj->next_sibling();
   if(next == NULL){
     wrenSetSlotNull(vm, 0);
   }
   else {
-    xml_node<>** nodePtr = create_node(vm);
-    *nodePtr = next;
+    create_node_data(vm, next);
   }  
 }
 
 static void wren_rapidxml_XmlNode_firstAttribute_0(WrenVM* vm){
-  xml_node<>* node = *(xml_node<>**)wrenGetSlotForeign(vm, 0);
-  xml_attribute<>* first = node->first_attribute();
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
+  xml_attribute<>* first = data->obj->first_attribute();
   if(first == NULL){
     wrenSetSlotNull(vm, 0);
   }
   else {
-    xml_attribute<>** attributePtr = create_attribute(vm);
-    *attributePtr = first;
+    create_attribute_data(vm, first);
   }  
 }
 
 static void wren_rapidxml_XmlNode_firstAttribute_1(WrenVM* vm){
-  xml_node<>* node = *(xml_node<>**)wrenGetSlotForeign(vm, 0);
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
   char* str = (char*)wrenGetSlotString(vm, 1);
-  xml_attribute<>* first = node->first_attribute(str);
+  xml_attribute<>* first = data->obj->first_attribute(str);
   if(first == NULL){
     wrenSetSlotNull(vm, 0);
   }
   else {
-    xml_attribute<>** attributePtr = create_attribute(vm);
-    *attributePtr = first;
+    create_attribute_data(vm, first);
   }  
 }
 
-FOREIGN_CLASS(XmlDocument, xml_document<>,*ptr = new xml_document<>;,if(*ptr != NULL) { (*ptr)->clear(); })
+FOREIGN_CLASS(XmlDocument, xml_document<>,ptr->obj = new xml_document<>;,if(ptr->obj != NULL) { ptr->obj->clear(); })
 
 static void wren_rapidxml_XmlDocument_parse_1(WrenVM* vm){
-  xml_document<>* doc = *(xml_document<>**)wrenGetSlotForeign(vm, 0);
+  XmlDocumentData* data = (XmlDocumentData*)wrenGetSlotForeign(vm, 0);
+  //lock string data in place
+  data->handle = wrenGetSlotHandle(vm, 1);
   char* str = (char*)wrenGetSlotString(vm, 1);
-  doc->parse<0>(str);
+  data->obj->parse<0>(str);
 }
 
 static void wren_rapidxml_XmlDocument_firstNode_0(WrenVM* vm){
-  xml_document<>* doc = *(xml_document<>**)wrenGetSlotForeign(vm, 0);
-  xml_node<>** nodePtr = create_node(vm);
-  *nodePtr = doc->first_node();
+  XmlDocumentData* data = (XmlDocumentData*)wrenGetSlotForeign(vm, 0);
+  xml_node<>* node = data->obj->first_node();
+  create_node_data(vm, node);
 }
 
 static void wren_rapidxml_XmlDocument_firstNode_1(WrenVM* vm){
-  xml_document<>* doc = *(xml_document<>**)wrenGetSlotForeign(vm, 0);
+  XmlDocumentData* data = (XmlDocumentData*)wrenGetSlotForeign(vm, 0);
   char* str = (char*)wrenGetSlotString(vm, 1);
-  xml_node<>** nodePtr = create_node(vm);
-  *nodePtr = doc->first_node(str);
+  xml_node<>* node = data->obj->first_node(str);
+  create_node_data(vm, node);
 }
 
 static void wren_rapidxml_RapidXml_init__0(WrenVM* vm){

@@ -1,6 +1,6 @@
 import "nanovg-app" for NanovgApp
 import "wren-sdl" for SdlKeyCode
-import "wren-nanovg" for NvgColor, NvgImage, NvgPaint
+import "wren-nanovg" for NvgColor, NvgImage, NvgPaint, ImageData
 import "fetch" for FetchClient
 import "wren-rapidxml" for XmlDocument
 
@@ -9,7 +9,9 @@ class RssItem {
     _node = node
   }
 
+  node {  _node }
   imageUrl { _node.firstNode("image").firstNode("url").value() }
+  title { _node.firstNode("title").value() }
 
   nextItem() {
     var n = _node.nextSibling()
@@ -38,6 +40,7 @@ class MyApp is NanovgApp{
     _channel = null
     _r = 0
     _t = 0
+    _last = 0
     _http.get("https://podcastd45a61.podigee.io/feed/mp3") {|status, content|
       var xml = XmlDocument.new(content)
       _channel = RssChannel.new(xml)
@@ -48,6 +51,7 @@ class MyApp is NanovgApp{
 
   update(ctx){
     _t = _t+0.015
+    _last = _last+0.015
     _http.update()
 
     ctx.save()   
@@ -70,6 +74,12 @@ class MyApp is NanovgApp{
     ctx.fill()
     
     ctx.restore()
+
+    if(_last > 2){
+      _last = 0
+      next()
+    }
+    
     //System.gc()
   }
 
@@ -80,7 +90,9 @@ class MyApp is NanovgApp{
   }
 
   setImage(c){
-    _image = NvgImage.fromMemory(context, c)
+    var id = ImageData.fromMemory(c)
+    id.resize(_box,_box)
+    _image = NvgImage.fromImageData(context, id)
     _imagePaint = NvgPaint.imagePattern(context, 0,0,_box,_box, 0, _image, 1)
   }
 
@@ -88,7 +100,9 @@ class MyApp is NanovgApp{
     if(_item == null) return
     _item = _item.nextItem()
     if(_item == null) return
-    _http.get(_item.imageUrl){|s,c| setImage(c) }
+    _http.get(_item.imageUrl){|s,c|
+      setImage(c) 
+    }
   }
 }
 
