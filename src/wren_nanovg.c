@@ -8,11 +8,30 @@
 
 #include "wrt_plugin.h"
 
+int plugin_id;
+
 typedef struct {
   unsigned char* pixels;
   int width;
   int height;
 } ImageData;
+
+typedef struct {
+  NVGglyphPosition* glyphs;
+  WrenHandle* glyphPositionClassHandle;
+} NanovgData;
+
+static void wren_nanovg_NanoVG_init_0(WrenVM* vm){
+  NanovgData* nd = calloc(1, sizeof(NanovgData));
+  nd->glyphs = calloc(BUFSIZ, sizeof(NVGglyphPosition));
+  
+  wrenEnsureSlots(vm, 1);
+  wrenGetVariable(vm, "wren-nanovg", "NvgGlyphPosition", 0);
+  nd->glyphPositionClassHandle = wrenGetSlotHandle(vm, 0);
+
+  wrt_set_plugin_data(vm, plugin_id, nd);
+
+}
 
 static void wren_nanovg_NvgContext_allocate(WrenVM* vm){
   wrenSetSlotNewForeign(vm, 0, 0, sizeof(NVGcontext*));
@@ -188,10 +207,9 @@ static void wren_nanovg_NvgContext_textBreakLine_4(WrenVM* vm){
   wrenSetSlotBool(vm, 0, more);
 }
 
-static NVGglyphPosition glyphs[BUFSIZ];
-static WrenHandle* glyphPositionClassHandle;
-
 static void wren_nanovg_NvgContext_textGlyphPosition_5(WrenVM* vm){
+  NanovgData* nd = wrt_get_plugin_data(vm, plugin_id);
+
   NVGcontext* ctx =  *(NVGcontext**)wrenGetSlotForeign(vm, 0);
   int x = wrenGetSlotDouble(vm, 1);
   int y = wrenGetSlotDouble(vm, 2);
@@ -205,17 +223,17 @@ static void wren_nanovg_NvgContext_textGlyphPosition_5(WrenVM* vm){
     return;
   }
 
-  int found = nvgTextGlyphPositions(ctx, x, y, text+start, text+end, glyphs, BUFSIZ);
+  int found = nvgTextGlyphPositions(ctx, x, y, text+start, text+end, nd->glyphs, BUFSIZ);
   
   if(found > BUFSIZ){
     wren_runtime_error(vm, "Text to large (Max size 512)");
   }
 
-  wrenSetSlotHandle(vm, 1, glyphPositionClassHandle);
+  wrenSetSlotHandle(vm, 1, nd->glyphPositionClassHandle);
 
   for (int i = 0; i < found; i++)
   {
-    NVGglyphPosition glyph = glyphs[i];
+    NVGglyphPosition glyph = nd->glyphs[i];
     glyph.str = (const char*)((glyph.str) - text);
     NVGglyphPosition* element = (NVGglyphPosition*)wrenSetSlotNewForeign(vm, 2, 1, sizeof(NVGglyphPosition));
     *element = glyph;
@@ -652,12 +670,6 @@ static void wren_nanovg_NvgFont_fromFile__2(WrenVM*vm){
   }
 }
 
-static void init_wren(WrenVM* vm){
-  wrenEnsureSlots(vm, 1);
-  wrenGetVariable(vm, "wren-nanovg", "NvgGlyphPosition", 0);
-  glyphPositionClassHandle = wrenGetSlotHandle(vm, 0);
-}
-
 static void wren_nanovg_ImageData_allocate(WrenVM* vm){
   wrenSetSlotNewForeign(vm, 0, 0, sizeof(ImageData));
 }
@@ -721,7 +733,10 @@ static void wren_nanovg_ImageData_resize_2(WrenVM* vm){
 }
 
 
-void wrt_plugin_init(){
+void wrt_plugin_init(int handle){
+  plugin_id = handle;
+  wrt_bind_method("wren-nanovg.NanoVG.init()", wren_nanovg_NanoVG_init_0);
+
   wrt_bind_class("wren-nanovg.NvgContext", wren_nanovg_NvgContext_allocate, wren_nanovg_NvgContext_delete);
   wrt_bind_method("wren-nanovg.NvgContext.create_(_)", wren_nanovg_NvgContext_create__1);
   wrt_bind_method("wren-nanovg.NvgContext.beginFrame(_,_,_)", wren_nanovg_NvgContext_beginFrame_3);
@@ -814,6 +829,4 @@ void wrt_plugin_init(){
   wrt_bind_method("wren-nanovg.ImageData.resize(_,_)", wren_nanovg_ImageData_resize_2);
   wrt_bind_method("wren-nanovg.ImageData.width", wren_nanovg_ImageData_width);
   wrt_bind_method("wren-nanovg.ImageData.height", wren_nanovg_ImageData_height);
-
-  wrt_wren_init_callback(init_wren);
 }

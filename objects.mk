@@ -1,0 +1,9 @@
+OBJ = main.o os_call.o mutex.o
+OBJ_SDL = sdl.o
+OBJ_JSON = json.o
+OBJ_GLFW = glfw.o
+OBJ_GLES2 = gles2.o
+OBJ_NVG = wren_nanovg.o nanovg.o
+OBJ_CURL = wren_curl.o
+OBJ_WREN = wren_core.o wren_debug.o wren_primitive.o wren_utils.o wren_value.o wren_vm.o wren_compiler.o wren_opt_meta.o wren_opt_random.o
+OBJ_NVG_DEMO=demo.o example_gles2.o nanovg.o

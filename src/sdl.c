@@ -1,27 +1,35 @@
+#include <stdlib.h>
 #include "./wrt_plugin.h"
 #include <SDL2/SDL.h>
 
+int plugin_id;
 
-static WrenHandle* loopHandle;
-static WrenHandle* callHandle_0;
+typedef struct {
+  WrenHandle* loopHandle;
+  WrenHandle* callHandle_0;
+} SdlData;
 
 static void wren_start(WrenVM* vm){
-  callHandle_0 = wrenMakeCallHandle(vm, "call()");
+  SdlData* sd = calloc(1, sizeof(SdlData));
+  sd->callHandle_0 = wrenMakeCallHandle(vm, "call()");
+  wrt_set_plugin_data(vm, plugin_id, sd);
 }
 
 static bool success;
 static WrenInterpretResult result = WREN_RESULT_COMPILE_ERROR;
 
 static void wren_update(WrenVM* vm){
+  SdlData* sd = wrt_get_plugin_data(vm, plugin_id);
+
   wrenEnsureSlots(vm, 1);
 
-  if(loopHandle == NULL){
+  if(sd->loopHandle == NULL){
     wrenSetSlotBool(vm, 0, false);
     return;
   }
 
-  wrenSetSlotHandle(vm, 0, loopHandle);
-  result = wrenCall(vm, callHandle_0);
+  wrenSetSlotHandle(vm, 0, sd->loopHandle);
+  result = wrenCall(vm, sd->callHandle_0);
   success = wrenGetSlotBool(vm, 0);
 
   wrenSetSlotBool(vm, 0, result == WREN_RESULT_SUCCESS && success);
@@ -156,10 +164,12 @@ static void wren_sdl_SDL_pollEvent_1(WrenVM* vm){
 }
 
 static void wren_sdl_SDL_runLoop_1(WrenVM* vm){
-  if(loopHandle != NULL){
-    wrenReleaseHandle(vm, loopHandle);
+  SdlData* sd = wrt_get_plugin_data(vm, plugin_id);
+
+  if(sd->loopHandle != NULL){
+    wrenReleaseHandle(vm, sd->loopHandle);
   }
-  loopHandle = wrenGetSlotHandle(vm, 1);
+  sd->loopHandle = wrenGetSlotHandle(vm, 1);
 }
 
 static void wren_sdl_SDL_getMouseState_0(WrenVM* vm){
@@ -174,7 +184,8 @@ static void wren_sdl_SDL_getMouseState_0(WrenVM* vm){
 }
 
 
-void wrt_plugin_init(){
+void wrt_plugin_init(int handle){
+  plugin_id = handle;
   SDL_Init(SDL_INIT_EVERYTHING);
 
   wrt_bind_class("wren-sdl.SdlWindow", wren_sdl_SdlWindow_allocate, wren_sdl_SdlWindow_finalize);
@@ -201,6 +212,9 @@ void wrt_plugin_init(){
   wrt_bind_method("wren-sdl.SDL.runLoop(_)", wren_sdl_SDL_runLoop_1);
   wrt_bind_method("wren-sdl.SDL.getMouseState()", wren_sdl_SDL_getMouseState_0);
 
-  wrt_wren_init_callback(wren_start);
   wrt_wren_update_callback(wren_update);
+}
+
+void wrt_plugin_init_wren(WrenVM* vm){
+  wren_start(vm);
 }

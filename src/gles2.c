@@ -1,6 +1,8 @@
 #include "wrt_plugin.h"
 #include <GLES2/gl2.h>
 
+int plugin_handle;
+
 static void wren_gles2_GL_clear_1(WrenVM* vm){
   unsigned int mask = wrenGetSlotDouble(vm,1);
   glClear(mask);
@@ -43,7 +45,8 @@ static void wren_gles2_GL_viewport_4(WrenVM* vm){
   glViewport(x,y,w,h);
 }
 
-void wrt_plugin_init(){
+void wrt_plugin_init(int handle){
+  plugin_handle = handle;
   wrt_bind_method("wren-gles2.GL.clear(_)", wren_gles2_GL_clear_1);
   wrt_bind_method("wren-gles2.GL.clearColor(_,_,_,_)", wren_gles2_GL_clearColor_4);
   wrt_bind_method("wren-gles2.GL.enable(_)", wren_gles2_GL_enable_1);

@@ -12,26 +12,36 @@
   (void)select(0, NULL, NULL, NULL, &wait);
 #endif
 
-static WrenHandle* loopHandle;
-static WrenHandle* callHandle_0;
+int plugin_id;
+
+typedef struct {
+  WrenHandle* loopHandle;
+  WrenHandle* callHandle_0;
+} CurlWrenData;
 
 static void wren_start(WrenVM* vm){
-  callHandle_0 = wrenMakeCallHandle(vm, "call()");
+  CurlWrenData* cd = calloc(1, sizeof(CurlWrenData));
+
+  cd->callHandle_0 = wrenMakeCallHandle(vm, "call()");
+
+  wrt_set_plugin_data(vm, plugin_id, cd);
 }
 
 static bool success;
 static WrenInterpretResult result = WREN_RESULT_COMPILE_ERROR;
 
 static void wren_update(WrenVM* vm){
+  CurlWrenData* cd = wrt_get_plugin_data(vm, plugin_id);
+
   wrenEnsureSlots(vm, 1);
 
-  if(loopHandle == NULL){
+  if(cd->loopHandle == NULL){
     wrenSetSlotBool(vm, 0, false);
     return;
   }
 
-  wrenSetSlotHandle(vm, 0, loopHandle);
-  result = wrenCall(vm, callHandle_0);
+  wrenSetSlotHandle(vm, 0, cd->loopHandle);
+  result = wrenCall(vm, cd->callHandle_0);
   success = wrenGetSlotBool(vm, 0);
 
   wrenSetSlotBool(vm, 0, result == WREN_RESULT_SUCCESS && success);
@@ -251,10 +261,12 @@ static void wren_curl_CurlMessage_isDone(WrenVM* vm){
 }
 
 static void wren_curl_CURL_runLoop_1(WrenVM* vm){
-  if(loopHandle != NULL){
-    wrenReleaseHandle(vm, loopHandle);
+  CurlWrenData* cd = wrt_get_plugin_data(vm, plugin_id);
+
+  if(cd->loopHandle != NULL){
+    wrenReleaseHandle(vm, cd->loopHandle);
   }
-  loopHandle = wrenGetSlotHandle(vm, 1);
+  cd->loopHandle = wrenGetSlotHandle(vm, 1);
 }
 
 static void wren_curl_CURL_sleep_1(WrenVM* vm){
@@ -267,7 +279,8 @@ static void wren_curl_CURL_clock(WrenVM* vm){
   wrenSetSlotDouble(vm, 0, ((double)c / (double)CLOCKS_PER_SEC) * 1000);
 }
 
-void wrt_plugin_init(){
+void wrt_plugin_init(int handle){
+  plugin_id = handle;
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
   wrt_bind_class("wren-curl.CurlHandle", wren_curl_CurlHandle_allocate, wren_curl_CurlHandle_delete);
@@ -295,6 +308,9 @@ void wrt_plugin_init(){
   wrt_bind_method("wren-curl.CURL.sleep(_)", wren_curl_CURL_sleep_1);
   wrt_bind_method("wren-curl.CURL.clock", wren_curl_CURL_clock);
 
-  wrt_wren_init_callback(wren_start);
   wrt_wren_update_callback(wren_update);
+}
+
+void wrt_plugin_init_wren(WrenVM* vm){
+  wren_start(vm);
 }

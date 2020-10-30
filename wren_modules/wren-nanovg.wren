@@ -200,3 +200,9 @@ class CreateFlags {
   static STENCIL_STROKES { 2 }
   static DEBUG { 4 }
 }
+
+class NanoVG {
+  foreign static init()
+}
+
+NanoVG.init()

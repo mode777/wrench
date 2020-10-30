@@ -1,5 +1,6 @@
 #include "./wrt_plugin.h"
 #include <rapidxml.hpp>
+#include <stdlib.h>
 
 // TODO: ERROR HANDLING!!!
 
@@ -27,14 +28,20 @@ static void wren_rapidxml_##WREN##_delete(void* data){ \
   DELETE \
 } 
 
-static WrenHandle* xmlNodeClass;
-static WrenHandle* xmlAttributeClass;
+int plugin_id;
+
+typedef struct {
+  WrenHandle* xmlNodeClass;
+  WrenHandle* xmlAttributeClass;
+} RapidXmlData;
 
 FOREIGN_CLASS(XmlAttribute, xml_attribute<>,,)
 
 static XmlAttributeData* create_attribute_data(WrenVM* vm, xml_attribute<>* attr){
+  RapidXmlData* rd = (RapidXmlData*)wrt_get_plugin_data(vm, plugin_id); 
+
   WrenHandle* handle = wrenGetSlotHandle(vm, 0);
-  wrenSetSlotHandle(vm, 0, xmlAttributeClass);
+  wrenSetSlotHandle(vm, 0, rd->xmlAttributeClass);
   wren_rapidxml_XmlAttribute_allocate(vm);
   XmlAttributeData* new_data = (XmlAttributeData*)wrenGetSlotForeign(vm, 0);
   new_data->handle = handle;
@@ -66,8 +73,9 @@ static void wren_rapidxml_XmlAttribute_nextAttribute_0(WrenVM* vm){
 FOREIGN_CLASS(XmlNode, xml_node<>,,)
 
 static XmlNodeData* create_node_data(WrenVM* vm, xml_node<>* node){
+  RapidXmlData* rd = (RapidXmlData*)wrt_get_plugin_data(vm, plugin_id); 
   WrenHandle* handle = wrenGetSlotHandle(vm, 0);
-  wrenSetSlotHandle(vm, 0, xmlNodeClass);
+  wrenSetSlotHandle(vm, 0, rd->xmlNodeClass);
   wren_rapidxml_XmlNode_allocate(vm);
   XmlNodeData* new_data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
   new_data->handle = handle;
@@ -166,16 +174,22 @@ static void wren_rapidxml_XmlDocument_firstNode_1(WrenVM* vm){
 }
 
 static void wren_rapidxml_RapidXml_init__0(WrenVM* vm){
+  RapidXmlData* rd = (RapidXmlData*)calloc(1, sizeof(RapidXmlData));
+
   wrenEnsureSlots(vm, 1);
 
   wrenGetVariable(vm, "wren-rapidxml", "XmlNode", 0);
-  xmlNodeClass = wrenGetSlotHandle(vm, 0);
+  rd->xmlNodeClass = wrenGetSlotHandle(vm, 0);
 
   wrenGetVariable(vm, "wren-rapidxml", "XmlAttribute", 0);
-  xmlAttributeClass = wrenGetSlotHandle(vm, 0);
+  rd->xmlAttributeClass = wrenGetSlotHandle(vm, 0);
+
+  wrt_set_plugin_data(vm, plugin_id, rd);
 }
 
-  void wrt_plugin_init(){
+  void wrt_plugin_init(int handle){
+    plugin_id = handle;
+
     wrt_bind_class("wren-rapidxml.XmlDocument", wren_rapidxml_XmlDocument_allocate, wren_rapidxml_XmlDocument_delete);
     wrt_bind_method("wren-rapidxml.XmlDocument.parse(_)", wren_rapidxml_XmlDocument_parse_1);
     wrt_bind_method("wren-rapidxml.XmlDocument.firstNode()", wren_rapidxml_XmlDocument_firstNode_0);
@@ -196,6 +210,5 @@ static void wren_rapidxml_RapidXml_init__0(WrenVM* vm){
     wrt_bind_method("wren-rapidxml.XmlAttribute.nextAttribute()", wren_rapidxml_XmlAttribute_nextAttribute_0);
 
     wrt_bind_method("wren-rapidxml.RapidXml.init_()", wren_rapidxml_RapidXml_init__0);
-
   }
 }

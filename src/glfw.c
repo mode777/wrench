@@ -2,16 +2,21 @@
 #include "./wrt_plugin.h"
 #include <GLFW/glfw3.h>
 
-static WrenHandle* loopHandle;
-static WrenHandle* callHandle_0;
-static WrenHandle* callHandle_1;
-static WrenHandle* callHandle_2;
-static WrenHandle* callHandle_3;
-static WrenHandle* callHandle_4;
-static WrenHandle* callHandle_5;
-static WrenHandle* callHandle_6;
-static WrenHandle* callHandle_7;
-static WrenHandle* callHandle_8;
+int plugin_id;
+
+typedef struct {
+  WrenHandle* loopHandle;
+  WrenHandle* callHandle_0;
+  WrenHandle* callHandle_1;
+  WrenHandle* callHandle_2;
+  WrenHandle* callHandle_3;
+  WrenHandle* callHandle_4;
+  WrenHandle* callHandle_5;
+  WrenHandle* callHandle_6;
+  WrenHandle* callHandle_7;
+  WrenHandle* callHandle_8;
+} GlfwData;
+
 
 typedef struct {
   WrenVM* vm;
@@ -20,30 +25,34 @@ typedef struct {
 } WrenCallbacks;
 
 static void wren_start(WrenVM* vm){
-  callHandle_0 = wrenMakeCallHandle(vm, "call()");
-  callHandle_1 = wrenMakeCallHandle(vm, "call(_)");
-  callHandle_2 = wrenMakeCallHandle(vm, "call(_,_)");
-  callHandle_3 = wrenMakeCallHandle(vm, "call(_,_,_)");
-  callHandle_4 = wrenMakeCallHandle(vm, "call(_,_,_,_)");
-  callHandle_5 = wrenMakeCallHandle(vm, "call(_,_,_,_,_)");
-  callHandle_6 = wrenMakeCallHandle(vm, "call(_,_,_,_,_,_)");
-  callHandle_7 = wrenMakeCallHandle(vm, "call(_,_,_,_,_,_,_)");
-  callHandle_8 = wrenMakeCallHandle(vm, "call(_,_,_,_,_,_,_,_)");
+  GlfwData* gd = calloc(1, sizeof(GlfwData));
+  gd->callHandle_0 = wrenMakeCallHandle(vm, "call()");
+  gd->callHandle_1 = wrenMakeCallHandle(vm, "call(_)");
+  gd->callHandle_2 = wrenMakeCallHandle(vm, "call(_,_)");
+  gd->callHandle_3 = wrenMakeCallHandle(vm, "call(_,_,_)");
+  gd->callHandle_4 = wrenMakeCallHandle(vm, "call(_,_,_,_)");
+  gd->callHandle_5 = wrenMakeCallHandle(vm, "call(_,_,_,_,_)");
+  gd->callHandle_6 = wrenMakeCallHandle(vm, "call(_,_,_,_,_,_)");
+  gd->callHandle_7 = wrenMakeCallHandle(vm, "call(_,_,_,_,_,_,_)");
+  gd->callHandle_8 = wrenMakeCallHandle(vm, "call(_,_,_,_,_,_,_,_)");
+  wrt_set_plugin_data(vm, plugin_id, (void*)gd);
 }
 
 static bool success;
 static WrenInterpretResult result = WREN_RESULT_COMPILE_ERROR;
 
 static void wren_update(WrenVM* vm){
+  GlfwData* gd = wrt_get_plugin_data(vm, plugin_id);
+
   wrenEnsureSlots(vm, 1);
 
-  if(loopHandle == NULL){
+  if(gd->loopHandle == NULL){
     wrenSetSlotBool(vm, 0, false);
     return;
   }
 
-  wrenSetSlotHandle(vm, 0, loopHandle);
-  result = wrenCall(vm, callHandle_0);
+  wrenSetSlotHandle(vm, 0, gd->loopHandle);
+  result = wrenCall(vm, gd->callHandle_0);
   success = wrenGetSlotBool(vm, 0);
 
   glfwPollEvents();
@@ -53,6 +62,8 @@ static void wren_update(WrenVM* vm){
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
   WrenCallbacks cbs = *(WrenCallbacks*)glfwGetWindowUserPointer(window);
+  GlfwData* gd = wrt_get_plugin_data(cbs.vm, plugin_id);
+
   if(cbs.keyCallback != NULL){
     wrenEnsureSlots(cbs.vm, 5);
     wrenSetSlotHandle(cbs.vm, 0, cbs.keyCallback);
@@ -60,7 +71,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     wrenSetSlotDouble(cbs.vm, 2, (double)scancode);
     wrenSetSlotDouble(cbs.vm, 3, (double)action);
     wrenSetSlotDouble(cbs.vm, 4, (double)mods);
-    wrenCall(cbs.vm, callHandle_4);
+    wrenCall(cbs.vm, gd->callHandle_4);
   }
 }
 
@@ -164,10 +175,12 @@ static void errorcb(int error, const char* desc)
 }
 
 static void wren_glfw_GLFW_runLoop_1(WrenVM* vm){
-  if(loopHandle != NULL){
-    wrenReleaseHandle(vm, loopHandle);
+  GlfwData* gd = wrt_get_plugin_data(vm, plugin_id);
+
+  if(gd->loopHandle != NULL){
+    wrenReleaseHandle(vm, gd->loopHandle);
   }
-  loopHandle = wrenGetSlotHandle(vm, 1);
+  gd->loopHandle = wrenGetSlotHandle(vm, 1);
 }
 
 static void wren_glfw_GLFW_swapInterval_1(WrenVM* vm){
@@ -179,7 +192,8 @@ static void wren_glfw_GLFW_time(WrenVM* vm){
   wrenSetSlotDouble(vm, 0, glfwGetTime());
 }
 
-void wrt_plugin_init(){
+void wrt_plugin_init(int handle){
+  plugin_id = handle;
   glfwInit();
   glfwSetErrorCallback(errorcb);
   wrt_bind_method("wren-glfw.GLFW.runLoop(_)", wren_glfw_GLFW_runLoop_1);
@@ -196,7 +210,9 @@ void wrt_plugin_init(){
   wrt_bind_method("wren-glfw.Window.keyCallback(_)", wren_glfw_Window_keyCallback_1);
   wrt_bind_method("wren-glfw.Window.mouseCallback(_)", wren_glfw_Window_mouseCallback_1);
   wrt_bind_method("wren-glfw.Window.cursorPos()", wren_glfw_Window_cursorPos_0);
-
-  wrt_wren_init_callback(wren_start);
   wrt_wren_update_callback(wren_update);
+}
+
+void wrt_plugin_init_wren(WrenVM* vm){
+  wren_start(vm);
 }

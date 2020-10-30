@@ -5,8 +5,6 @@
 
 #define pgl_wren_new(vm, T) (T*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(T));
 
-
-
 #define PGL_JSON_START_TOKENS 1024
 
 typedef struct PGLJSONParser_T PGLJSONParser;
@@ -189,7 +187,7 @@ static void JSONParser_getChildren_0(WrenVM* vm){
   wrenSetSlotDouble(vm, 0, (double)pglJsonGetChildTokens(data->parser));
 }
 
-void wrt_plugin_init(){
+void wrt_plugin_init(int handle){
   wrt_bind_class("json.JsonParser", JSONParser_allocate, JSONParser_finalize);
   wrt_bind_method("json.JsonParser.getValue()", JSONParser_getValue_0);
   wrt_bind_method("json.JsonParser.getToken()", JSONParser_getToken_0);

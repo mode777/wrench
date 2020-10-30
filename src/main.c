@@ -8,6 +8,7 @@
 #include <stb_ds.h>
 
 #include "os_call.h"
+#include "mutex.h"
 
 #define WRT_SEND_API(T) apiFunc(#T, T)
 #ifdef DEBUG
@@ -15,6 +16,33 @@
 #else
 #define LOG(...)
 #endif
+
+MUTEX mutex;
+
+typedef struct {
+  char* key;
+  void* value;
+} WrenPluginData;
+
+typedef struct {
+  bool isMainThread;
+  int numPluginData;
+  void** pluginData; 
+} WrenUserData;
+
+static void wrt_set_plugin_data(WrenVM* vm, int handle, void* value){
+  WrenUserData* ud = (WrenUserData*)wrenGetUserData(vm);
+  if(ud->numPluginData < handle){
+    ud->pluginData = ud->numPluginData > 0 ? realloc(ud->pluginData, handle*sizeof(void*)) : malloc(handle*sizeof(void*));
+    ud->numPluginData = handle;
+  }
+  ud->pluginData[handle-1] = value;
+}
+
+static void* wrt_get_plugin_data(WrenVM* vm, int handle){
+  WrenUserData* ud = (WrenUserData*)wrenGetUserData(vm);
+  return ud->pluginData[handle- 1];
+}
 
 static const void error_fn(WrenVM *vm, WrenErrorType type, const char *module, int line, const char *message)
 {  
@@ -48,8 +76,6 @@ static char *read_file_string(const char *filename)
 static char strbuffer[1024];
 static char dllbuffer[1024];
 
-
-
 typedef struct {
   char * key;
   WrenForeignMethodFn value;
@@ -60,8 +86,18 @@ typedef struct {
   WrenForeignClassMethods value;
 } ClassBinding;
 
+typedef struct {
+  void* wrenInitFunc;
+} BinaryModuleData;
+
+typedef struct {
+  char* key;
+  BinaryModuleData value;
+} BinaryModule;
+
 static Binding* bindings = NULL;
 static ClassBinding* classBindings = NULL;
+static BinaryModule* binaryModules = NULL;
 
 static char* getMethodName(const char* module, 
   const char* className, 
@@ -134,8 +170,6 @@ static void wrt_bind_class(const char* name, WrenForeignMethodFn allocator, Wren
   shput(classBindings, name, methods);
 }
 
-
-
 struct WrenCallbackNode {
   WrenForeignMethodFn callback;
   struct WrenCallbackNode* next;
@@ -146,7 +180,6 @@ typedef struct {
   WrenCallbackNode* end;
 }  WrenCallbackList;
 
-static WrenCallbackList initCallbacks;
 static WrenCallbackList updateCallbacks;
 
 static void callbacks_push(WrenCallbackList* list, WrenCallbackNode* node){
@@ -156,26 +189,6 @@ static void callbacks_push(WrenCallbackList* list, WrenCallbackNode* node){
   } else {
     list->end->next = node;
   }
-}
-
-static void wrt_wren_init_callback(WrenForeignMethodFn fn){
-  WrenCallbackNode* cb = malloc(sizeof(WrenCallbackNode));
-  cb->callback = fn;
-  cb->next = NULL;
-
-  callbacks_push(&initCallbacks, cb);
-}
-
-static void call_init_callbacks(WrenVM* vm) {
-  WrenCallbackNode* current = initCallbacks.start;
-  while(current != NULL){
-    current->callback(vm);
-    WrenCallbackNode* remove = current;
-    current = current->next;
-    free(remove);
-  }
-  initCallbacks.start = NULL;
-  initCallbacks.end = NULL;
 }
 
 static void wrt_wren_update_callback(WrenForeignMethodFn fn){
@@ -207,19 +220,7 @@ static void call_update_callbacks(WrenVM* vm) {
   }
 }
 
-
-
-static void load_plugin(const char * name){
-  void* handle = wrt_dlopen(name);
-  if(handle == NULL){
-    LOG("Could not load Plugin: %s\n", name);
-    return;
-  } 
-  void (*initFunc)() = wrt_dlsym(handle, "wrt_plugin_init");
-  assert(initFunc != NULL);
-  void (*apiFunc)(const char*, void*) = wrt_dlsym(handle, "wrt_plugin_api");
-  assert(apiFunc != NULL);
-  
+static void send_api(void (*apiFunc)(const char*, void*)){
   WRT_SEND_API(wrenGetSlotCount);
   WRT_SEND_API(wrenEnsureSlots);
   WRT_SEND_API(wrenGetSlotType);
@@ -254,10 +255,49 @@ static void load_plugin(const char * name){
 
   WRT_SEND_API(wrt_bind_class);
   WRT_SEND_API(wrt_bind_method);
-  WRT_SEND_API(wrt_wren_init_callback);
   WRT_SEND_API(wrt_wren_update_callback);
+  WRT_SEND_API(wrt_set_plugin_data);
+  WRT_SEND_API(wrt_get_plugin_data);
+}
 
-  initFunc();
+static int plugin_id = 1;
+
+static void load_plugin(WrenVM* vm, const char * name){
+  MUTEX_LOCK(&mutex);
+
+  BinaryModuleData md;
+
+  int index = shgeti(binaryModules, name);
+  if(index == -1){
+    FILE* f = fopen(name, "rb");
+    
+    if(f == NULL) goto DONE;
+    else fclose(f);
+  
+    void* handle = wrt_dlopen(name);
+    assert(handle != NULL);
+
+    void (*initFunc)(int handle) = wrt_dlsym(handle, "wrt_plugin_init");
+    assert(initFunc != NULL);
+    void (*apiFunc)(const char*, void*) = wrt_dlsym(handle, "wrt_plugin_api");
+    assert(apiFunc != NULL);
+
+    send_api(apiFunc);
+    initFunc(plugin_id++);
+    md.wrenInitFunc = wrt_dlsym(handle, "wrt_plugin_init_wren");
+    shput(binaryModules, name, md);
+  }
+  else {
+    md = binaryModules[index].value;
+  }
+
+  if(md.wrenInitFunc != NULL){
+    void (*wrenInitFunc)(WrenVM*) = md.wrenInitFunc;
+    wrenInitFunc(vm);
+  }
+
+  DONE:
+  MUTEX_UNLOCK(&mutex);
 }
 
 static char* load_module_fn(WrenVM* vm, const char* name){
@@ -276,7 +316,7 @@ static char* load_module_fn(WrenVM* vm, const char* name){
     #elif defined(__unix__)
     strcat(dllbuffer, ".so");
     #endif
-    load_plugin(dllbuffer);
+    load_plugin(vm, dllbuffer);
     strcat(strbuffer, ".wren");
   }
 
@@ -290,14 +330,21 @@ static WrenVM* init_wren(){
   config.errorFn = error_fn;
   config.writeFn = write_fn;
   config.loadModuleFn = load_module_fn;
-    config.bindForeignMethodFn = bindMethodFunc;
+  config.bindForeignMethodFn = bindMethodFunc;
   config.bindForeignClassFn = bindClassFunc;
-  return wrenNewVM(&config); 
+  WrenVM* vm = wrenNewVM(&config);
+  WrenUserData* ud = calloc(1, sizeof(WrenUserData)); 
+  wrenSetUserData(vm, (void*)ud);
+  return vm;
 }
 
 int main(int argc, char *argv[])
 {  
-  WrenVM* vm = init_wren();
+  MUTEX_INIT(&mutex);
+
+  WrenVM* vm = init_wren(); 
+  ((WrenUserData*)wrenGetUserData(vm))->isMainThread = true;
+
   char* script;
   if(argc < 2){
     script = read_file_string("main.wren");
@@ -309,7 +356,6 @@ int main(int argc, char *argv[])
   WrenInterpretResult result = wrenInterpret(vm, "main", script);
   free(script);
   if(result == WREN_RESULT_SUCCESS){
-    call_init_callbacks(vm);
     while(updateCallbacks.start != NULL){
       call_update_callbacks(vm);
     }
