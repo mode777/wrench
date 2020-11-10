@@ -17,7 +17,7 @@ static void pack_list(msgpack_packer* packer, WrenVM* vm, int slot){
 }
 
 static void pack_map(msgpack_packer* packer, WrenVM* vm, int slot){
-  wrenmap
+  assert(false);
 }
 
 static void pack_value(msgpack_packer* packer, WrenVM* vm, int slot){
