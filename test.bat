@@ -1,0 +1,1 @@
+wrench.exe examples/thread.wren

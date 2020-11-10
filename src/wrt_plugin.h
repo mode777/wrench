@@ -20,10 +20,23 @@ typedef enum
   WREN_RESULT_COMPILE_ERROR,
   WREN_RESULT_RUNTIME_ERROR
 } WrenInterpretResult;
+typedef enum
+{
+  WREN_TYPE_BOOL,
+  WREN_TYPE_NUM,
+  WREN_TYPE_FOREIGN,
+  WREN_TYPE_LIST,
+  WREN_TYPE_MAP,
+  WREN_TYPE_NULL,
+  WREN_TYPE_STRING,
+
+  // The object is of a type that isn't accessible by the C API.
+  WREN_TYPE_UNKNOWN
+} WrenType;
 
 static const int (*wrenGetSlotCount)(WrenVM*);
 static const void (*wrenEnsureSlots)(WrenVM*, int);
-static const int (*wrenGetSlotType)(WrenVM*, int);
+static const WrenType (*wrenGetSlotType)(WrenVM*, int);
 static const bool (*wrenGetSlotBool)(WrenVM*, int);
 static const char* (*wrenGetSlotBytes)(WrenVM* vm, int slot, int* length);
 static const double (*wrenGetSlotDouble)(WrenVM*, int);
@@ -39,8 +52,8 @@ static const void (*wrenSetSlotNewMap)(WrenVM*, int);
 static const void (*wrenSetSlotNull)(WrenVM*, int);
 static const void (*wrenSetSlotString)(WrenVM*, int, const char*);
 static const void (*wrenSetSlotHandle)(WrenVM*, int, WrenHandle*);
-static const int (*wrenGetListCount)(WrenVM*, int);
-static const void (*wrenGetListElement)(WrenVM*, int, int, int);
+static const int (*wrenGetListCount)(WrenVM* vm, int slot);
+static const void (*wrenGetListElement)(WrenVM* vm, int listSlot, int index, int elementSlot);
 static const void (*wrenInsertInList)(WrenVM*, int listSlot, int index, int elementSlot);
 static const int (*wrenGetMapCount)(WrenVM*, int);
 static const bool (*wrenGetMapContainsKey)(WrenVM*, int, int);
@@ -52,6 +65,7 @@ static const void (*wrenAbortFiber)(WrenVM* vm, int slot);
 static WrenHandle* (*wrenMakeCallHandle)(WrenVM* vm, const char* signature);
 static WrenInterpretResult (*wrenCall)(WrenVM* vm, WrenHandle* method);
 static const void (*wrenGetVariable)(WrenVM* vm, const char* module, const char* name, int slot);
+static WrenInterpretResult (*wrenInterpret)(WrenVM* vm, const char* module, const char* source);
 
 typedef void (*WrenForeignMethodFn)(WrenVM* vm);
 typedef void (*WrenFinalizerFn)(void* data);
@@ -61,6 +75,7 @@ static const void (*wrt_bind_class)(const char*, WrenForeignMethodFn, WrenFinali
 static const void (*wrt_wren_update_callback)(WrenForeignMethodFn fn);
 static void (*wrt_set_plugin_data)(WrenVM* vm, int handle, void* value);
 static void* (*wrt_get_plugin_data)(WrenVM* vm, int handle);
+static WrenVM* (*wrt_new_wren_vm)();
 
 void wrt_plugin_api(const char* name, void* method){
   WRT_LOAD_API(name, method, wrenGetSlotCount);
@@ -94,12 +109,14 @@ void wrt_plugin_api(const char* name, void* method){
   WRT_LOAD_API(name, method, wrenMakeCallHandle);
   WRT_LOAD_API(name, method, wrenCall);
   WRT_LOAD_API(name, method, wrenGetVariable);
-
+  WRT_LOAD_API(name, method, wrenInterpret);
+  
   WRT_LOAD_API(name, method, wrt_bind_method);
   WRT_LOAD_API(name, method, wrt_bind_class);
   WRT_LOAD_API(name, method, wrt_wren_update_callback);
   WRT_LOAD_API(name, method, wrt_get_plugin_data);
   WRT_LOAD_API(name, method, wrt_set_plugin_data);
+  WRT_LOAD_API(name, method, wrt_new_wren_vm);
 }
 
 static void wren_runtime_error(WrenVM* vm, const char * error){

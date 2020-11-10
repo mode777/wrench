@@ -1,20 +1,16 @@
 import "fetch" for FetchClient
 import "wren-curl" for CURL
+import "tasks" for Task
 
-var client = FetchClient.new()
+Task.new {|c|
+  var client = FetchClient.new()
 
-client.get("https://example.com"){|status, content|
-  System.print("Example.com %(status)")
-}
+  var content = Task.combine([
+    client.get("https://example.com").then {|x| System.print("Example downloaded") },
+    client.get("https://alexklingenbeck.de/not-exisiting").catch {|x| System.print(x) },
+    client.get("https://myflover.de").then {|x| System.print("MyFlover downloaded") } 
+  ]).await()
 
-client.get("https://alexklingenbeck.de"){|status, content|
-  System.print("alexklingenbeck.de %(status)")
-  client.get("https://myflover.de"){|s,c|
-    System.print("myflover.de %(status)")
-  }
-}
+  //System.print(content)
 
-while(client.requests > 0){
-  client.update()
-  CURL.sleep(100)
-}
+}.getResult()

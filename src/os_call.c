@@ -38,10 +38,10 @@ void* wrt_dlopen(const char *pcDllname)
 {
     #if defined(_WIN32)
       void* handle = (void*)LoadLibrary(pcDllname);
-      // if(handle == NULL) {
-      //   printf("Error loading %s\n", pcDllname);
-      //   PrintErrorMessage(GetLastError());
-      // }
+      if(handle == NULL) {
+        printf("Error loading %s\n", pcDllname);
+        PrintErrorMessage(GetLastError());
+      }
       return handle;
     #elif defined(__GNUC__)
       void* handle = dlopen(pcDllname, RTLD_NOW);

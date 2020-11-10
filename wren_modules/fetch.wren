@@ -1,8 +1,9 @@
 import "wren-curl" for CURL, CurlHandle, CurlMultiHandle, CurlMessage
+import "tasks" for Task, Canceller, DefaultCanceller
 
 class FetchClient {
   construct new(){
-    init(100)
+    init(0)
   }
 
   init(threshold){
@@ -12,25 +13,51 @@ class FetchClient {
     _requests = 0
     _multi = CurlMultiHandle.new()
     _message = CurlMessage.new()
-    _lookup = {}
+    _finished = {}
   }
 
   requests { _requests }
 
-  get(url, fn){
-    var handle = CurlHandle.new(url)
-    addHandle_(handle, fn)
+  get(url){
+    return Task.new {|c|
+      var handle = CurlHandle.new(url)
+      return runHandle(url, handle)
+    }
+  }
+  
+  download(url, path){
+    return Task.new {|c|
+      var handle = CurlHandle.download(url, path)
+      return runHandle(url, handle)
+    }
   }
 
-  download(url, path, fn){
-    var handle = CurlHandle.download(url, path)
-    addHandle_(handle, fn)
+  runHandle(url, handle){
+    addHandle_(handle)
+
+    while(!_finished[handle.id]){
+      update()
+      Fiber.yield()
+    }
+    
+    removeHandle_(handle)
+    
+    var status = handle.responseCode
+    if(status >= 200 && status < 300){
+      return handle.getData()
+    }
+    handle.dispose()
+    Fiber.abort("Request to %(url) returned non-success status code %(status)")
   }
 
-  addHandle_(handle, fn){
+  addHandle_(handle){
     _requests = _requests+1
-    _lookup[handle.id] = fn
     _multi.addHandle(handle)
+  }
+
+  removeHandle_(handle){
+    _finished.remove(handle.id)
+    _multi.removeHandle(handle)
   }
 
   update(){
@@ -43,14 +70,12 @@ class FetchClient {
   }
 
   step_() {
+
     _requests = _multi.perform()
 
     while(_multi.readInfo(_message)){
       var handle = _message.getHandle()
-      _lookup[handle.id].call(handle.responseCode, handle.getData())
-      _lookup.remove(handle.id)
-      _multi.removeHandle(handle)
-      handle.dispose()
+      _finished[handle.id] = true
     }
   }
 }

@@ -1,3 +1,5 @@
+import "tasks" for Task, DefaultCanceller
+
 foreign class SdlWindow {
   construct new(width, height, title, hints){
     create_(width, height, title, hints)
@@ -25,6 +27,59 @@ foreign class SdlEvent {
   foreign key_sym
   foreign touch_x
   foreign touch_y
+}
+
+foreign class SdlThread {
+  static waitParent(){
+    while(countParent == 0){}
+    return receiveParent()
+  }
+  static waitParentAsync(cancel){
+    return Task.new(cancel) {|c|
+      while(countParent == 0 && !c.isCancelled){
+        Fiber.yield()
+      }
+      var p = receiveParent() 
+      return p
+    }
+  }
+  static waitParentAsync(){ waitParentAsync(DefaultCanceller) }
+  foreign static sendParent(msg)
+  foreign static receiveParent()
+  foreign static countParent
+
+  construct new(path){
+    create(path)
+  }
+  foreign create(name)
+  foreign isDone
+  foreign result
+  foreign send(mgs)
+  foreign receive()
+  foreign messageCount
+  waitMessage(){
+    while(messageCount == 0){}
+    return receive()
+  }
+  waitMessageAsync(cancel){
+    return Task.new {|c|
+      while(messageCount == 0 && !c.isCancelled){
+        Fiber.yield()
+      }
+      if(c.isCancelled) return null
+      return receive()
+    }
+  }
+  waitMessageAsync(){ waitMessageAsync(DefaultCanceller) }
+  wait(){
+    while(!isDone){}
+  }
+  waitAsync(cancel){
+    return Task.new {
+      while(!isDone && !cancel.isCancelled){ Fiber.yield() }
+    }
+  }
+  waitAsync(){ waitAsync(DefaultCanceller) }
 }
 
 class SDL {

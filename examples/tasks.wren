@@ -1,84 +1,31 @@
-class Task {
+import "tasks" for Task, Canceller
 
-  static all(lst){
-    var results = List.filled(lst.count, null)
-    var done = false
-    while(!done){
-      done = true
-      for(i in 0...lst.count){
-        var fib = lst[i]
-        if(!fib.isDone){
-          done = false
-          results[i] = fib.call()
-        } 
+class Helpers {
+  static createCounter(name, start, end, cancel){
+    return Task.new(cancel) {|c|
+      for(i in start...end){
+        if(c.isCancelled){
+          break
+        } else {
+          Fiber.yield(i)
+          Task.delay(0.1, c)
+        }
       }
-    }
-    return results
-  }
-
-  static delay(s){
-    var t = System.clock
-    while(System.clock - t < s) Fiber.yield()
-  }
-
-  construct create(fn){
-    fromFiber_(Fiber.new(fn))
-  }
-
-  construct fromFiber(fib){
-    fromFiber_(fib)
-  }
-
-  fromFiber_(fib){
-    _fiber = fib
-  }
-  
-  getResult(){
-    var ret = null
-    while(!fib.isDone){
-      ret = fib.call()
-    }
-    return ret
-  }
-
-  continue(fib){
-    if(!fib.isDone){
-      return fib.call()
+      return "%(name) done"
     }
   }
-
-  await(fib){
-    var ret = null
-    while(!fib.isDone){
-      ret = fib.call()
-      if(fib.isDone) break
-      Fiber.yield()
-    }
-    return ret
-  }
-
-  
 }
 
+var cancel = Canceller.new()
+ 
+var main = Task.new(cancel) {|c|
+  var result1 = Helpers.createCounter("Task 1", 0, 5, c).subscribe{|x| System.print(x) }.await()
+  var result2 = Helpers.createCounter("Task 2", 5, 10, c).subscribe{|x| System.print(x) }.await()
+  System.print("%(result1), %(result2)")
 
+  c.cancel()
 
-var t = Task.create {
-  var t1 = Task.create {
-    Task.delay(1)
-    System.print("Hello from Task 1")
-  }
-
-  var t2 = Task.create {
-    System.print("Hello from Task 2")
-  }
-
-  Task.await(t1)
-  Task.delay(1)
-  Task.await(t2)
-}
-
-//Task.getResult(t)
-
-while(!t.isDone){
-  Task.step(t)
-}
+  var task3 = Helpers.createCounter("Task 3", 10, 15, c).subscribe{|x| System.print(x) }
+  var task4 = Helpers.createCounter("Task 4", 15, 20, c).subscribe{|x| System.print(x) }
+  System.print(Task.awaitAll([task3, task4]))
+}.getResult()

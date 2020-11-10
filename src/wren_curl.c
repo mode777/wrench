@@ -308,7 +308,8 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("wren-curl.CURL.sleep(_)", wren_curl_CURL_sleep_1);
   wrt_bind_method("wren-curl.CURL.clock", wren_curl_CURL_clock);
 
-  wrt_wren_update_callback(wren_update);
+  // todo: remove updates
+  //wrt_wren_update_callback(wren_update);
 }
 
 void wrt_plugin_init_wren(WrenVM* vm){

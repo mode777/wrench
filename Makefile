@@ -1,10 +1,10 @@
 include objects.mk
 
-INCLUDES =-I./wren/src/include -I./wren/src/optional -I./wren/src/vm -I./include -I./include/win32 -I./include/common -I./nanovg/src
+INCLUDES =-I./wren/src/include -I./wren/src/optional -I./wren/src/vm -I./include -I./include/win32 -I./include/common -I./nanovg/src -I./msgpack-c/include
 
 DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc
 
-VPATH = ./src ./wren/src/optional ./wren/src/vm ./nanovg/src ./nanovg/example
+VPATH = ./src ./wren/src/optional ./wren/src/vm ./nanovg/src ./nanovg/example ./msgpack-c/src
 
 all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll
 
@@ -46,11 +46,15 @@ wren-rapidxml.dll: wren_rapidxml.o
 	g++ -o $@ wren_rapidxml.o $(DLLFLAGS)
 	cp $@ ./wren_modules/$@
 
+wren-msgpack.dll: $(OBJ_MSGPACK)
+	gcc -o $@ $(OBJ_MSGPACK) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
 wren_rapidxml.o: wren_rapidxml.cpp
 	g++ -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -DDEBUG -fpermissive
 
 %.o: %.c
-	gcc -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -DDEBUG
+	gcc -o $@ -c $< -fPIC -g -O0 -Wall $(INCLUDES) -DDEBUG
 
 clean:
 	rm -f *.{o,bc,exe}
