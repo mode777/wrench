@@ -6,7 +6,7 @@ DLLFLAGS =-shared -Wl,-no-undefined -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf
 
 VPATH = ./src ./wren/src/optional ./wren/src/vm ./nanovg/src
 
-all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so
+all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so
 
 wrench: $(OBJ) $(OBJ_WREN)
 	gcc -o $@ $(OBJ) $(OBJ_WREN) -ldl -lm
