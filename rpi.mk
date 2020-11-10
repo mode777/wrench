@@ -35,6 +35,10 @@ wren-rapidxml.so: wren_rapidxml.o
 	g++ -o $@ wren_rapidxml.o $(DLLFLAGS)
 	cp $@ ./wren_modules/$@
 
+wren-msgpack.so: $(OBJ_MSGPACK)
+	gcc -o $@ $(OBJ_MSGPACK) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
 wren_rapidxml.o: wren_rapidxml.cpp
 	g++ -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -fpermissive
 
