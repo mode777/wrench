@@ -4,7 +4,6 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/win32
 
 DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc
 
-VPATH = ./src ./wren/src/optional ./wren/src/vm ./nanovg/src ./nanovg/example ./msgpack-c/src
 
 all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll
 
