@@ -14,6 +14,7 @@ foreign class XmlNode{
   foreign firstNode()
   foreign firstNode(name)
   foreign nextSibling()
+  foreign nextSibling(name)
   foreign firstAttribute()
   foreign firstAttribute(name)
 }

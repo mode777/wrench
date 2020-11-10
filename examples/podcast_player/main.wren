@@ -12,25 +12,31 @@ import "event-queue" for EventQueue
 class MyApp is NanovgApp{
   construct new(){
     super(800, 480, "MyApp")
-    _thread = SdlThread.new("./examples/podcast_player/downloader.wren")
-    _mainTask = Task.repeat {|c| messageLoop() }
+    _downloader = SdlThread.new("./examples/podcast_player/worker.wren")
+    _resizer = SdlThread.new("./examples/podcast_player/worker.wren")
+    _driver = TaskDriver.new(DefaultCanceller)
+    _downloaderTask = _driver.add(Task.repeat {|c| messageLoop(_downloader) })
+    _resizerTask = _driver.add(Task.repeat {|c| messageLoop(_resizer) })
+    _garbageCollect = _driver.add(Task.intervall(1000){ |c| System.gc() })
     _events = EventQueue.new(256)
     _ui = PodcastUI.new(_events)
     //_state = {}
-    _events.subscribe("pc.feed.download"){ |e| Command.send(_thread, Command.new(e)) }
+    _events.subscribe("pc.feed.download"){ |e| Command.send(_downloader, Command.new(e)) }
+    _events.subscribe("pc.image.download"){ |e| Command.send(_downloader, Command.new(e)) }
+    _events.subscribe("pc.image.resize"){ |e| Command.send(_resizer, Command.new(e)) }
 
+    _events.add(["pc.feed.download","https://gamenotover.de/feed/podcast/"])
     _events.add(["pc.feed.download","https://podcastd45a61.podigee.io/feed/mp3"])
     _events.add(["pc.feed.download","https://feeds.soundcloud.com/users/soundcloud:users:21436304/sounds.rss"])
-    _events.add(["pc.feed.download","https://gamenotover.de/feed/podcast/"])
   }
 
-  messageLoop(){
-    var cmd = Command.receiveAsync(_thread).await()
+  messageLoop(thread){
+    var cmd = Command.receiveAsync(thread).await()
     _events.add(cmd.args)
   }
 
   update(ctx){
-    _mainTask.step()
+    _driver.task.step()
 
     var count = _events.count
     for(i in 0...count){

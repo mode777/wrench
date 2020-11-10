@@ -1,6 +1,6 @@
 import "wren-nanovg" for NvgColor, NvgImage, NvgPaint, ImageData, Winding, NvgFont, TextAlign
 import "tasks" for TaskQueue, DefaultCanceller
-import "tween" for Tween, TweenEaseOutCubic, TweenLinear, TweenEaseOutQuad
+import "tween" for Tween, TweenEaseOutCubic, TweenLinear, TweenEaseOutQuad 
 
 class Resources {
   static getRegularFont(ctx) { __font = __font || NvgFont.fromFile(ctx, "./examples/podcast_player/res/Roboto-Regular.ttf") }
@@ -45,9 +45,12 @@ class Feed {
     _url = url
     _animationQueue = TaskQueue.new(16, DefaultCanceller)
     _alpha = 0
+    _textAlpha = 0
+    _imageAlpha = 0
   }
 
   draw(ctx,x,y,w,h){
+    _ctx = ctx
     _animationQueue.task.step()
 
     ctx.save()
@@ -59,6 +62,12 @@ class Feed {
     ctx.roundedRect(x, y, w, h, w*0.03)
     ctx.fillColor(NvgColor.rgba(180,180,180,255))
     ctx.fill()
+
+    if(_image){
+      var imgPaint = NvgPaint.imagePattern(ctx, x,y,w,h, 0, _image, _imageAlpha)
+      ctx.fillPaint(imgPaint)
+      ctx.fill()
+    }
 
     if(!_title) {
       Spinner.draw(ctx, x+w/2, y+h/2, w/4)
@@ -74,23 +83,35 @@ class Feed {
     ctx.textAlign(TextAlign.ALIGN_LEFT|TextAlign.ALIGN_MIDDLE)
 
     ctx.fontBlur(2)
-    ctx.fillColor(NvgColor.rgba(0,0,0,128))
+    ctx.fillColor(NvgColor.rgba(0,0,0,_textAlpha * 0.5))
     var bounds = ctx.textBoxBounds(x,y,w,_title)
     ctx.textBox(x, y + w*0.1, w, _title)
 
     ctx.fontBlur(0)
-    ctx.fillColor(NvgColor.rgba(255,255,255,255))
+    ctx.fillColor(NvgColor.rgba(255,255,255,_textAlpha))
     ctx.textBox(x, y + w*0.1, w, _title)
   }
 
   addInfo(title, description){
     _title = title
     _description = description
+    fadeText(1, 1)
+  }
+
+  addImage(w,h,data){
+    _image = NvgImage.fromRgba(_ctx, w, h, data)
+    fadeImage(1,2)
   }
 
   fade(alpha, sec){
     _animationQueue.add(Tween.create([_alpha], [alpha], sec, TweenLinear){|v| _alpha = v[0]})
   }
+  fadeText(alpha, sec){
+    _animationQueue.add(Tween.create([_textAlpha], [alpha * 255], sec, TweenLinear){|v| _textAlpha = v[0]})
+  }
+  fadeImage(alpha,sec){
+    _animationQueue.add(Tween.create([_imageAlpha], [alpha], sec, TweenLinear){|v| _imageAlpha = v[0]})
+  }  
 }
 
 class FeedList {
@@ -100,19 +121,26 @@ class FeedList {
     _events = ev
     ev.subscribe("pc.feed.info"){ |ev| onFeedInfo(ev) }
     ev.subscribe("pc.feed.download"){ |ev| onFeedDownload(ev) }
+    ev.subscribe("pc.rgba.loaded"){ |ev| onImage(ev) }
     _size = 175
+  }
+
+  onImage(ev){
+    var feed = _have[ev[1]]
+    if(feed){
+      feed.addImage(ev[3],ev[4],ev[2])
+    }
   }
   
   onFeedInfo(ev){
     var feed = _have[ev[1]]
     feed.addInfo(ev[2], ev[3])
-    feed.fade(1, 2)
     _events.add(["pc.image.download", ev[1], ev[4], _size, _size])
   }
 
   onFeedDownload(ev){
     var feed = Feed.new(_events, ev[1])
-    feed.fade(0.3, 1)
+    feed.fade(1, 1)
     _feeds.add(feed)
     _have[ev[1]] = feed
   }

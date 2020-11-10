@@ -127,6 +127,18 @@ static void wren_rapidxml_XmlNode_nextSibling_0(WrenVM* vm){
   }  
 }
 
+static void wren_rapidxml_XmlNode_nextSibling_1(WrenVM* vm){
+  XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
+  char* str = (char*)wrenGetSlotString(vm, 1);
+  xml_node<>* next = data->obj->next_sibling(str);
+  if(next == NULL){
+    wrenSetSlotNull(vm, 0);
+  }
+  else {
+    create_node_data(vm, next);
+  }  
+}
+
 static void wren_rapidxml_XmlNode_firstAttribute_0(WrenVM* vm){
   XmlNodeData* data = (XmlNodeData*)wrenGetSlotForeign(vm, 0);
   xml_attribute<>* first = data->obj->first_attribute();
@@ -201,6 +213,7 @@ static void wren_rapidxml_RapidXml_init__0(WrenVM* vm){
     wrt_bind_method("wren-rapidxml.XmlNode.firstNode()", wren_rapidxml_XmlNode_firstNode_0);
     wrt_bind_method("wren-rapidxml.XmlNode.firstNode(_)", wren_rapidxml_XmlNode_firstNode_1);
     wrt_bind_method("wren-rapidxml.XmlNode.nextSibling()", wren_rapidxml_XmlNode_nextSibling_0);
+    wrt_bind_method("wren-rapidxml.XmlNode.nextSibling(_)", wren_rapidxml_XmlNode_nextSibling_1);
     wrt_bind_method("wren-rapidxml.XmlNode.firstAttribute()", wren_rapidxml_XmlNode_firstAttribute_0);
     wrt_bind_method("wren-rapidxml.XmlNode.firstAttribute(_)", wren_rapidxml_XmlNode_firstAttribute_1);
     

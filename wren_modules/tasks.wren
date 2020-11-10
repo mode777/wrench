@@ -69,6 +69,16 @@ class Task {
     delay(s, DefaultCanceller)
   }
 
+  static intervall(delay, cancel, fn){
+    return Task.new(cancel) {|c|
+      while(!c.isCancelled){
+        Task.delay(delay/1000, c)
+        fn.call(c)
+      }
+    }
+  }
+  static intervall(delay, fn){ intervall(delay, DefaultCanceller, fn) }
+
   isDone { _fiber.isDone }
   result { _result }
 

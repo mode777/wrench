@@ -11,7 +11,8 @@
 int plugin_id;
 
 typedef struct {
-  unsigned char* pixels;
+  WrenVM* vm;
+  WrenHandle* handle;
   int width;
   int height;
 } ImageData;
@@ -628,11 +629,14 @@ static void wren_nanovg_NvgImage_fromMemory__2(WrenVM*vm){
   }
 }
 
-static void wren_nanovg_NvgImage_fromImageData__2(WrenVM*vm){
+static void wren_nanovg_NvgImage_fromRgba__4(WrenVM*vm){
   WrenImage* handle = (WrenImage*)wrenGetSlotForeign(vm, 0);
   NVGcontext* ctx =  *(NVGcontext**)wrenGetSlotForeign(vm, 1);
-  ImageData* img =  (ImageData*)wrenGetSlotForeign(vm, 2);
-  handle->handle = nvgCreateImageRGBA(ctx, img->width, img->height, 0, img->pixels);
+  int w = wrenGetSlotDouble(vm, 2);
+  int h = wrenGetSlotDouble(vm, 3);
+  int _;
+  const char* bytes = wrenGetSlotBytes(vm, 4, &_);
+  handle->handle = nvgCreateImageRGBA(ctx, w, h, 0, (const unsigned char*)bytes);
   if(handle->handle == 0){
     wren_runtime_error(vm, "Image not found or invalid format");
   }
@@ -670,41 +674,61 @@ static void wren_nanovg_NvgFont_fromFile__2(WrenVM*vm){
   }
 }
 
+static WrenHandle* store_in_string(WrenVM* vm, int slot, const char* bytes, size_t size){
+  wrenEnsureSlots(vm, slot+1);
+  wrenSetSlotBytes(vm, slot, bytes, size);
+  return wrenGetSlotHandle(vm, slot);
+}
+
 static void wren_nanovg_ImageData_allocate(WrenVM* vm){
-  wrenSetSlotNewForeign(vm, 0, 0, sizeof(ImageData));
+  ImageData* id = (ImageData*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(ImageData));
+  id->vm = vm;
 }
 
 static void wren_nanovg_ImageData_delete(void* data){
   ImageData* img = (ImageData*)data;
-  if(img->pixels != NULL){
-    free(img->pixels);
+  if(img->handle != NULL){
+    wrenReleaseHandle(img->vm, img->handle);
   }
 }
 
 static void wren_nanovg_ImageData_fromFile__1(WrenVM* vm){
   ImageData* img = (ImageData*)wrenGetSlotForeign(vm, 0);
   const char* str = wrenGetSlotString(vm, 1);
-  img->pixels = stbi_load(str, &img->width, &img->height, NULL, 4);
-  if(img->pixels == NULL){ 
+  unsigned char* pixels = stbi_load(str, &img->width, &img->height, NULL, 4);
+  if(pixels == NULL){ 
     wren_runtime_error(vm, "Error loading image");
   }
+  img->handle = store_in_string(vm, 1, (const char*)pixels, img->width * img->height * 4);
+  free(pixels);
 }
 
 static void wren_nanovg_ImageData_fromMemory__1(WrenVM* vm){
   ImageData* img = (ImageData*)wrenGetSlotForeign(vm, 0);
   int length;
-  const unsigned char* buffer = wrenGetSlotBytes(vm, 1, &length);
-  img->pixels = stbi_load_from_memory(buffer, length, &img->width, &img->height, NULL, 4);
-  if(img->pixels == NULL){ 
+  const char* buffer = wrenGetSlotBytes(vm, 1, &length);
+  unsigned char* pixels = stbi_load_from_memory((const unsigned char*)buffer, length, &img->width, &img->height, NULL, 4);
+  if(pixels == NULL){ 
     wren_runtime_error(vm, "Error loading image");
   }
+  img->handle = store_in_string(vm, 1, (const char*)pixels, img->width * img->height * 4);
+  free(pixels);
 }
 
 static void wren_nanovg_ImageData_init__2(WrenVM* vm){
   ImageData* img = (ImageData*)wrenGetSlotForeign(vm, 0);
   img->width = wrenGetSlotDouble(vm, 1);
   img->height = wrenGetSlotDouble(vm, 2);
-  img->pixels = calloc(img->width*img->height, sizeof(unsigned char));
+  unsigned char* pixels = (unsigned char*)calloc(img->width*img->height, sizeof(unsigned char));
+  img->handle = store_in_string(vm, 1, (const char*)pixels, img->width * img->height * 4);
+  free(pixels);
+}
+
+static void wren_nanovg_ImageData_fromRgba__3(WrenVM* vm){
+  ImageData* img = (ImageData*)wrenGetSlotForeign(vm, 0);
+  img->width = wrenGetSlotDouble(vm, 1);
+  img->height = wrenGetSlotDouble(vm, 2);
+  img->handle = wrenGetSlotHandle(vm, 3);
 }
 
 static void wren_nanovg_ImageData_width(WrenVM* vm){
@@ -718,20 +742,29 @@ static void wren_nanovg_ImageData_height(WrenVM* vm){
 }
 
 static void wren_nanovg_ImageData_resize_2(WrenVM* vm){
+  // TODO: Return a new image instead of resizing the old one
   ImageData* img = (ImageData*)wrenGetSlotForeign(vm, 0);
   int nw = wrenGetSlotDouble(vm, 1);
   int nh = wrenGetSlotDouble(vm, 2);
+  wrenSetSlotHandle(vm, 0, img->handle);
+  int _;
+  const char* pixels = wrenGetSlotBytes(vm, 0, &_);
   unsigned char* newPixels = malloc(nw*nh*sizeof(unsigned char)*4);
-  int err = stbir_resize_uint8(img->pixels, img->width, img->height, 0, newPixels, nw, nh, 0, 4);
+  int err = stbir_resize_uint8((const unsigned char*)pixels, img->width, img->height, 0, newPixels, nw, nh, 0, 4);
   if(err == 0){
     wren_runtime_error(vm, "Error resizing");
   }
-  free(img->pixels);
-  img->pixels = newPixels;
+  wrenReleaseHandle(vm, img->handle);
+  img->handle = store_in_string(vm, 1, (const char*)newPixels, nw*nh*4);
   img->width = nw;
   img->height = nh;
+  free(newPixels);
 }
 
+static void wren_nanovg_ImageData_bytes(WrenVM* vm){
+  ImageData* img = (ImageData*)wrenGetSlotForeign(vm, 0);
+  wrenSetSlotHandle(vm, 0, img->handle);
+}
 
 void wrt_plugin_init(int handle){
   plugin_id = handle;
@@ -815,7 +848,7 @@ void wrt_plugin_init(int handle){
   wrt_bind_class("wren-nanovg.NvgImage", wren_nanovg_NvgImage_allocate, wren_nanovg_NvgImage_delete);
   wrt_bind_method("wren-nanovg.NvgImage.fromFile_(_,_)", wren_nanovg_NvgImage_fromFile__2);
   wrt_bind_method("wren-nanovg.NvgImage.fromMemory_(_,_)", wren_nanovg_NvgImage_fromMemory__2);
-  wrt_bind_method("wren-nanovg.NvgImage.fromImageData_(_,_)", wren_nanovg_NvgImage_fromImageData__2);
+  wrt_bind_method("wren-nanovg.NvgImage.fromRgba_(_,_,_,_)", wren_nanovg_NvgImage_fromRgba__4);
   wrt_bind_method("wren-nanovg.NvgImage.width", wren_nanovg_NvgImage_width);
   wrt_bind_method("wren-nanovg.NvgImage.height", wren_nanovg_NvgImage_height);
 
@@ -825,8 +858,10 @@ void wrt_plugin_init(int handle){
   wrt_bind_class("wren-nanovg.ImageData", wren_nanovg_ImageData_allocate, wren_nanovg_ImageData_delete);
   wrt_bind_method("wren-nanovg.ImageData.fromFile_(_)", wren_nanovg_ImageData_fromFile__1);
   wrt_bind_method("wren-nanovg.ImageData.fromMemory_(_)", wren_nanovg_ImageData_fromMemory__1);
+  wrt_bind_method("wren-nanovg.ImageData.fromRgba_(_,_,_)", wren_nanovg_ImageData_fromRgba__3);
   wrt_bind_method("wren-nanovg.ImageData.init_(_,_)", wren_nanovg_ImageData_init__2);
   wrt_bind_method("wren-nanovg.ImageData.resize(_,_)", wren_nanovg_ImageData_resize_2);
   wrt_bind_method("wren-nanovg.ImageData.width", wren_nanovg_ImageData_width);
   wrt_bind_method("wren-nanovg.ImageData.height", wren_nanovg_ImageData_height);
+  wrt_bind_method("wren-nanovg.ImageData.bytes", wren_nanovg_ImageData_bytes);
 }

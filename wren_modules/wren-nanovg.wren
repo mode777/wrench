@@ -64,12 +64,12 @@ foreign class NvgImage{
   construct fromMemory(ctx, mem){
     fromMemory_(ctx, mem)
   }
-  construct fromImageData(ctx, id){
-    fromImageData_(ctx, id)
+  construct fromRgba(ctx, w, h, bytes){
+    fromRgba_(ctx, w, h, bytes)
   }
   foreign fromFile_(ctx,path)
   foreign fromMemory_(ctx,mem)
-  foreign fromImageData_(ctx,id)
+  foreign fromRgba_(ctx,w, h, bytes)
   foreign width
   foreign height
 }
@@ -159,6 +159,8 @@ foreign class ImageData {
   foreign init_(w,h)
   foreign fromFile_(p)
   foreign fromMemory_(d)
+  foreign fromRgba_(w,h,d)
+  foreign bytes
   foreign resize(w,h)
   foreign width
   foreign height
