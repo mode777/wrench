@@ -1,6 +1,6 @@
 include objects.mk
 
-INCLUDES =-I./wren/src/include -I./wren/src/optional -I./wren/src/vm -I./include -I./include/win32 -I./include/common -I./nanovg/src -I./msgpack-c/include
+INCLUDES =$(INCLUDES_COMMON) -I./include/win32
 
 DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc
 

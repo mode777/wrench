@@ -1,6 +1,6 @@
 include objects.mk
 
-INCLUDES =-I./wren/src/include -I./wren/src/optional -I./wren/src/vm -I./include -I./include/linux -I./include/common -I./nanovg/src
+INCLUDES =$(INCLUDES_COMMON) -I./include/linux
 
 DLLFLAGS =-shared -Wl,-no-undefined -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf -lm
 
