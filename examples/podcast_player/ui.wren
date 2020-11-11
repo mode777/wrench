@@ -63,11 +63,11 @@ class Feed {
     ctx.fillColor(NvgColor.rgba(180,180,180,255))
     ctx.fill()
 
-    if(_image){
-      var imgPaint = NvgPaint.imagePattern(ctx, x,y,w,h, 0, _image, _imageAlpha)
-      ctx.fillPaint(imgPaint)
-      ctx.fill()
-    }
+    // if(_image){
+    //   var imgPaint = NvgPaint.imagePattern(ctx, x,y,w,h, 0, _image, _imageAlpha)
+    //   ctx.fillPaint(imgPaint)
+    //   ctx.fill()
+    // }
 
     if(!_title) {
       Spinner.draw(ctx, x+w/2, y+h/2, w/4)
