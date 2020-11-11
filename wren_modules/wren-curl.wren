@@ -2,15 +2,20 @@ foreign class CurlHandle {
   construct new(url){
     this.url = url
     this.caInfo = "./curl-ca-bundle.crt"
+    this.followRedirects = true
+    this.timeout = 30
     this.writeMemory()
   }
   construct download(url, path){
     this.url = url
     this.caInfo = "./curl-ca-bundle.crt"
+    this.followRedirects = true
     this.writeFile(path)
   }
   foreign url=(v)
   foreign caInfo=(v)
+  foreign followRedirects=(v)
+  foreign timeout=(v)
   foreign id
   foreign writeFile(path)
   foreign writeMemory()

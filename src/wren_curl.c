@@ -99,6 +99,18 @@ static void wren_curl_CurlHandle_caInfo_v(WrenVM* vm){
   curl_easy_setopt(data->handle, CURLOPT_CAINFO, path);
 }
 
+static void wren_curl_CurlHandle_followRedirects_v(WrenVM* vm){
+  CurlData* data = (CurlData*)wrenGetSlotForeign(vm, 0);
+  bool opt = wrenGetSlotBool(vm, 1);
+  curl_easy_setopt(data->handle, CURLOPT_FOLLOWLOCATION, opt ? 1 : 0);
+}
+
+static void wren_curl_CurlHandle_timeout_v(WrenVM* vm){
+  CurlData* data = (CurlData*)wrenGetSlotForeign(vm, 0);
+  long timeout = wrenGetSlotDouble(vm, 1);
+  curl_easy_setopt(data->handle, CURLOPT_TIMEOUT, timeout);
+}
+
 static void wren_curl_CurlHandle_id(WrenVM* vm){
   CurlData* data = (CurlData*)wrenGetSlotForeign(vm, 0);
   wrenSetSlotDouble(vm, 0, data->id);
@@ -286,6 +298,8 @@ void wrt_plugin_init(int handle){
   wrt_bind_class("wren-curl.CurlHandle", wren_curl_CurlHandle_allocate, wren_curl_CurlHandle_delete);
   wrt_bind_method("wren-curl.CurlHandle.url=(_)", wren_curl_CurlHandle_url_v);
   wrt_bind_method("wren-curl.CurlHandle.caInfo=(_)", wren_curl_CurlHandle_caInfo_v);
+  wrt_bind_method("wren-curl.CurlHandle.followRedirects=(_)", wren_curl_CurlHandle_followRedirects_v);
+  wrt_bind_method("wren-curl.CurlHandle.timeout=(_)", wren_curl_CurlHandle_timeout_v);
   wrt_bind_method("wren-curl.CurlHandle.id", wren_curl_CurlHandle_id);
   wrt_bind_method("wren-curl.CurlHandle.writeFile(_)", wren_curl_CurlHandle_writeFile_1);
   wrt_bind_method("wren-curl.CurlHandle.writeMemory()", wren_curl_CurlHandle_writeMemory_0);

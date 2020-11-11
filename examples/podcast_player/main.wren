@@ -17,7 +17,7 @@ class MyApp is NanovgApp{
     _driver = TaskDriver.new(DefaultCanceller)
     _downloaderTask = _driver.add(Task.repeat {|c| messageLoop(_downloader) })
     _resizerTask = _driver.add(Task.repeat {|c| messageLoop(_resizer) })
-    _garbageCollect = _driver.add(Task.intervall(15){ |c| System.gc() })
+    _garbageCollect = _driver.add(Task.intervall(1000){ |c| System.gc() })
     _events = EventQueue.new(256)
     _ui = PodcastUI.new(_events)
     _t = 0

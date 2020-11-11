@@ -83,7 +83,7 @@ class Feed {
     ctx.textAlign(TextAlign.ALIGN_LEFT|TextAlign.ALIGN_MIDDLE)
 
     ctx.fontBlur(2)
-    ctx.fillColor(NvgColor.rgba(0,0,0,_textAlpha * 0.5))
+    ctx.fillColor(NvgColor.rgba(0,0,0,255))
     var bounds = ctx.textBoxBounds(x,y,w,_title)
     ctx.textBox(x, y + w*0.1, w, _title)
 
@@ -135,7 +135,7 @@ class FeedList {
   onFeedInfo(ev){
     var feed = _have[ev[1]]
     feed.addInfo(ev[2], ev[3])
-    _events.add(["pc.image.download", ev[1], ev[4], _size, _size])
+    _events.add(["pc.image.download", ev[1], ev[4], 256, 256])
   }
 
   onFeedDownload(ev){
