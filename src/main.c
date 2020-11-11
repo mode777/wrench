@@ -284,6 +284,9 @@ static WrenVM* wrt_new_wren_vm(){
   config.loadModuleFn = load_module_fn;
   config.bindForeignMethodFn = bindMethodFunc;
   config.bindForeignClassFn = bindClassFunc;
+  config.initialHeapSize = 1024 * 1024 * 2;
+  config.minHeapSize = 1024 * 512;
+  config.heapGrowthPercent = 50;
   WrenVM* vm = wrenNewVM(&config);
   WrenUserData* ud = calloc(1, sizeof(WrenUserData)); 
   wrenSetUserData(vm, (void*)ud);

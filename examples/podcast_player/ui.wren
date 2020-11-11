@@ -82,7 +82,7 @@ class Feed {
     ctx.fontFace(Resources.getBoldFont(ctx))
     ctx.textAlign(TextAlign.ALIGN_LEFT|TextAlign.ALIGN_MIDDLE)
 
-    ctx.fontBlur(2)
+    ctx.fontBlur(1)
     ctx.fillColor(NvgColor.rgba(0,0,0,255))
     var bounds = ctx.textBoxBounds(x,y,w,_title)
     ctx.textBox(x, y + w*0.1, w, _title)
