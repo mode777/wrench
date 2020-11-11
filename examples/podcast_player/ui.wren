@@ -49,12 +49,12 @@ class Feed {
     _imageAlpha = 0
   }
 
-  draw(ctx,x,y,w,h){
+  draw(ctx,x,y,w,h,t){
     _ctx = ctx
     _animationQueue.task.step()
 
     ctx.save()
-    y = y + (5 + (System.clock*4+(x/5)).sin*10)
+    y = y + (5 + (t*4+(x/5)).sin*10)
     
     ctx.globalAlpha(_alpha)
 
@@ -63,11 +63,11 @@ class Feed {
     ctx.fillColor(NvgColor.rgba(180,180,180,255))
     ctx.fill()
 
-    // if(_image){
-    //   var imgPaint = NvgPaint.imagePattern(ctx, x,y,w,h, 0, _image, _imageAlpha)
-    //   ctx.fillPaint(imgPaint)
-    //   ctx.fill()
-    // }
+    if(_image){
+      var imgPaint = NvgPaint.imagePattern(ctx, x,y,w,h, 0, _image, _imageAlpha)
+      ctx.fillPaint(imgPaint)
+      ctx.fill()
+    }
 
     if(!_title) {
       Spinner.draw(ctx, x+w/2, y+h/2, w/4)
@@ -145,7 +145,7 @@ class FeedList {
     _have[ev[1]] = feed
   }
 
-  draw(ctx,x,y,w,h){
+  draw(ctx,x,y,w,h,t){
     var gap = _size * 0.1
     var ex = x + gap
     var ey = y + gap
@@ -155,7 +155,7 @@ class FeedList {
     while(ey <= h) {
       while(ex+ew <= w){
         if(i >= _feeds.count) return
-        _feeds[i].draw(ctx, ex, ey, ew, eh)
+        _feeds[i].draw(ctx, ex, ey, ew, eh, t)
         i = i+1
         ex = ex + gap + ew
       }
@@ -172,8 +172,8 @@ class MainLayout {
 
   }
 
-  draw(ctx,x,y,w,h){
-    _feedList.draw(ctx, x,y,w,h)
+  draw(ctx,x,y,w,h,t){
+    _feedList.draw(ctx, x,y,w,h,t)
   }
 }
 
@@ -184,8 +184,8 @@ class PodcastUI {
     _currentLayout = _mainLayout
   }
 
-  draw(ctx,x,y,w,h){
-    _mainLayout.draw(ctx,x,y,w,h)
+  draw(ctx,x,y,w,h,t){
+    _mainLayout.draw(ctx,x,y,w,h,t)
   }
 
 }

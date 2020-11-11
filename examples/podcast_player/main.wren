@@ -20,6 +20,7 @@ class MyApp is NanovgApp{
     _garbageCollect = _driver.add(Task.intervall(15){ |c| System.gc() })
     _events = EventQueue.new(256)
     _ui = PodcastUI.new(_events)
+    _t = 0
     //_state = {}
     _events.subscribe("pc.feed.download"){ |e| Command.send(_downloader, Command.new(e)) }
     _events.subscribe("pc.image.download"){ |e| Command.send(_downloader, Command.new(e)) }
@@ -36,6 +37,7 @@ class MyApp is NanovgApp{
   }
 
   update(ctx){
+    _t = _t + 0.015
     _driver.task.step()
 
     var count = _events.count
@@ -43,7 +45,7 @@ class MyApp is NanovgApp{
       _events.dispatchNext()
     }
 
-    _ui.draw(context,0,0,width,height)
+    _ui.draw(context,0,0,width,height,_t)
   }
 
   
