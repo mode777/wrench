@@ -24,6 +24,7 @@ class DownloadFeedCommand is Command {
   getTask(){
     return Task.new {
       var content = Resources.http.get(url).await()
+      System.print("Got feed %(url)")
       var xml = XmlDocument.new(content)
       var channel = xml.firstNode("rss").firstNode("channel")
       var title = channel.firstNode("title").value()
