@@ -5,7 +5,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/win32
 DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc
 
 
-all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll images.dll threads.dll buffers.dll
+all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll images.dll threads.dll buffers.dll wren-msgpack.dll
 
 test.exe: test.o 
 	gcc -o $@ test.o -L./lib -lcurl

@@ -4,7 +4,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/linux
 
 DLLFLAGS =-shared -Wl,-no-undefined -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf -lm
 
-all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so images.so threads.so buffers.so
+all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so images.so threads.so buffers.so wren-msgpack.so
 
 wrench: $(OBJ) $(OBJ_WREN)
 	gcc -o $@ $(OBJ) $(OBJ_WREN) -ldl -lm
