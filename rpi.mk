@@ -49,7 +49,7 @@ images.so: $(OBJ_IMAGE)
 	cp $@ ./wren_modules/$@
 
 threads.so: $(OBJ_THREAD)
-	gcc -o $@ $(OBJ_THREAD) $(DLLFLAGS) -L. -l:SDL2.dll
+	gcc -o $@ $(OBJ_THREAD) $(DLLFLAGS) -L. -lSDL2
 	cp $@ ./wren_modules/$@
 
 %.o: %.c
