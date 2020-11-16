@@ -1,4 +1,4 @@
 *.o
-./*.dll
-./*.exe
-./*.so
+*.dll
+*.exe
+*.so
