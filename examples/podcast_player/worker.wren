@@ -20,6 +20,5 @@ var messageLoop = Task.repeat{|c|
 while(true){
   messageLoop.step()
   queue.task.step()
-  SDL.delay(15)
-  System.gc()
+  SDL.delay(30)
 }

@@ -79,6 +79,7 @@ class ResizeImageCommand is Command {
     return Task.new {
       var id = Image.fromBuffer(data)
       var resized = id.resize(width, height)
+      id.dispose()
       Command.send(Command.new({ "id": "pc.rgba.loaded", "url": url, "hasBody": true, "width": width, "height": height}))
       Command.sendBinary(resized.buffer)
     }

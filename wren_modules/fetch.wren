@@ -3,7 +3,7 @@ import "tasks" for Task, Canceller, DefaultCanceller
 
 class FetchClient {
   construct new(){
-    init(0)
+    init(0.001)
   }
 
   init(threshold){

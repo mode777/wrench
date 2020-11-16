@@ -129,6 +129,7 @@ class FeedList {
     var feed = _have[ev["url"]]
     if(feed){
       feed.addImage(ev["width"],ev["height"],ev["data"])
+      ev["data"].dispose()
     }
   }
   
