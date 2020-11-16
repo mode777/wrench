@@ -1,4 +1,4 @@
-import "wren-nanovg" for NvgColor, NvgImage, NvgPaint, ImageData, Winding, NvgFont, TextAlign
+import "wren-nanovg" for NvgColor, NvgImage, NvgPaint, Winding, NvgFont, TextAlign
 import "tasks" for TaskQueue, DefaultCanceller
 import "tween" for Tween, TweenEaseOutCubic, TweenLinear, TweenEaseOutQuad 
 
@@ -126,23 +126,23 @@ class FeedList {
   }
 
   onImage(ev){
-    var feed = _have[ev[1]]
+    var feed = _have[ev["url"]]
     if(feed){
-      feed.addImage(ev[3],ev[4],ev[2])
+      feed.addImage(ev["width"],ev["height"],ev["data"])
     }
   }
   
   onFeedInfo(ev){
-    var feed = _have[ev[1]]
-    feed.addInfo(ev[2], ev[3])
-    _events.add(["pc.image.download", ev[1], ev[4], 256, 256])
+    var feed = _have[ev["url"]]
+    feed.addInfo(ev["title"], ev["description"])
+    if(ev["imageUrl"]) _events.add({"id":"pc.image.download", "url": ev["url"], "imageUrl": ev["imageUrl"], "width": 256, "height": 256})
   }
 
   onFeedDownload(ev){
-    var feed = Feed.new(_events, ev[1])
+    var feed = Feed.new(_events, ev["url"])
     feed.fade(1, 1)
     _feeds.add(feed)
-    _have[ev[1]] = feed
+    _have[ev["url"]] = feed
   }
 
   draw(ctx,x,y,w,h,t){

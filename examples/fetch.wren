@@ -1,5 +1,4 @@
 import "fetch" for FetchClient
-import "wren-curl" for CURL
 import "tasks" for Task
 
 Task.new {|c|

@@ -1,4 +1,4 @@
-import "wren-sdl" for SdlThread
+import "threads" for Thread
 
 class Helpers {
   static delay(s){
@@ -7,11 +7,11 @@ class Helpers {
   }
 }
 
-var t = SdlThread.new("./examples/thread_comm_func.wren")
-t.send("Hello")
-t.send("World")
-t.send("kill")
+var t = Thread.new("./examples/thread_comm_func.wren")
+t.sendString("Hello")
+t.sendString("World")
+t.sendString("kill")
 Helpers.delay(1)
-System.print(t.waitMessage())
-System.print(t.waitMessage())
+System.print(t.waitString())
+System.print(t.waitString())
 t.wait()

@@ -5,7 +5,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/win32
 DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc
 
 
-all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll
+all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll images.dll threads.dll buffers.dll
 
 test.exe: test.o 
 	gcc -o $@ test.o -L./lib -lcurl
@@ -47,6 +47,18 @@ wren-rapidxml.dll: wren_rapidxml.o
 
 wren-msgpack.dll: $(OBJ_MSGPACK)
 	gcc -o $@ $(OBJ_MSGPACK) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
+buffers.dll: $(OBJ_BUFFERS)
+	gcc -o $@ $(OBJ_BUFFERS) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
+images.dll: $(OBJ_IMAGE)
+	gcc -o $@ $(OBJ_IMAGE) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
+threads.dll: $(OBJ_THREAD)
+	gcc -o $@ $(OBJ_THREAD) $(DLLFLAGS) -L. -l:SDL2.dll
 	cp $@ ./wren_modules/$@
 
 wren_rapidxml.o: wren_rapidxml.cpp

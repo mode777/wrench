@@ -2,8 +2,8 @@ import "./examples/podcast_player/command" for Command
 import "tasks" for Task
 import "wren-rapidxml" for XmlDocument
 import "fetch" for FetchClient
-import "wren-sdl" for SdlThread, SDL
-import "wren-nanovg" for ImageData
+import "threads" for Parent
+import "images" for Image
 
 class Resources {
   static http { __httpClient = __httpClient || FetchClient.new() }
@@ -12,13 +12,13 @@ class Resources {
 class DownloadFeedCommand is Command {
   static name { "pc.feed.download" }
 
-  url { args[1] }
+  url { args["url"] }
 
   construct new(args){
     super(args)
   }
   construct create(url){
-    args = [DownloadFeedCommand.name, url]
+    args = { "id": DownloadFeedCommand.name, "url" : url }
   }
 
   getTask(){
@@ -35,8 +35,8 @@ class DownloadFeedCommand is Command {
         next = imgNode.nextSibling("image")
         imgNode = next || imgNode 
       }
-      var image = imgNode.firstNode("url").value()
-      Command.send(Command.new(["pc.feed.info", url, title, description, image]))
+      var image = imgNode != null ? imgNode.firstNode("url").value() : null
+      Command.send(Command.new({ "id": "pc.feed.info", "url": url, "title": title, "description": description, "imageUrl": image}))
     }
   }
 }
@@ -45,10 +45,10 @@ Command.register(DownloadFeedCommand)
 class DownloadImageCommand is Command {
   static name { "pc.image.download" }
 
-  url { args[1] }
-  imageUrl { args[2] }
-  width { args[3] }
-  height { args[4] }
+  url { args["url"] }
+  imageUrl { args["imageUrl"] }
+  width { args["width"] }
+  height { args["height"] }
 
   construct new(args){
     super(args)
@@ -57,7 +57,8 @@ class DownloadImageCommand is Command {
   getTask(){
     return Task.new {
       var content = Resources.http.get(imageUrl).await()
-      Command.send(Command.new(["pc.image.resize", url, content, width, height]))
+      Command.send(Command.new({ "id":"pc.image.resize", "url": url, "hasBody": true, "width": width, "height": height}))
+      Command.sendBinary(content)
     }
   }
 }
@@ -66,20 +67,20 @@ Command.register(DownloadImageCommand)
 class ResizeImageCommand is Command {
   static name { "pc.image.resize" }
 
-  url { args[1] }
-  data { args[2] }
-  width { args[3] }
-  height { args[4] }
+  url { args["url"] }
+  width { args["width"] }
+  height { args["height"] }
 
   construct new(args){
     super(args)
   }
 
-  getTask(){
+  getTask(data){
     return Task.new {
-      var id = ImageData.fromMemory(data)
-      id.resize(width, height)
-      Command.send(Command.new(["pc.rgba.loaded", url, id.bytes, width, height]))
+      var id = Image.fromBuffer(data)
+      var resized = id.resize(width, height)
+      Command.send(Command.new({ "id": "pc.rgba.loaded", "url": url, "hasBody": true, "width": width, "height": height}))
+      Command.sendBinary(resized.buffer)
     }
   }
 }

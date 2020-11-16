@@ -1,4 +1,4 @@
-import "wren-curl" for CURL, CurlHandle, CurlMultiHandle, CurlMessage
+import "wren-curl" for CurlHandle, CurlMultiHandle, CurlMessage
 import "tasks" for Task, Canceller, DefaultCanceller
 
 class FetchClient {
@@ -44,7 +44,8 @@ class FetchClient {
     
     var status = handle.responseCode
     if(status >= 200 && status < 300){
-      return handle.getData()
+      var data = handle.getData()
+      return data
     }
     handle.dispose()
     Fiber.abort("Request to %(url) returned non-success status code %(status)")
@@ -64,9 +65,9 @@ class FetchClient {
     if(_time >= _threshold && _requests > 0){
       step_()
       _time = 0
-      _startTime = CURL.clock
+      _startTime = System.clock
     }
-    _time = CURL.clock - _startTime
+    _time = System.clock - _startTime
   }
 
   step_() {

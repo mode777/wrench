@@ -43,8 +43,8 @@ class EventQueue {
   dispatchNext(){
     if(count == 0) return false
     var ev = _queue.dequeue()
-    var handlers = _handlers[ev[0]]
-    if(_debug) System.print("EQ: Dispatch '%(ev[0])'")
+    var handlers = _handlers[ev["id"]]
+    if(_debug) System.print("EQ: Dispatch '%(ev["id"])'")
     if(handlers){
       for(h in handlers){
         h.call(ev)

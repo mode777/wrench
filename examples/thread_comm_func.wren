@@ -1,7 +1,7 @@
-import "wren-sdl" for SdlThread
+import "threads" for Parent
 
 var message
 while(message != "kill"){
-  message = SdlThread.waitParent()
-  SdlThread.sendParent("You wrote: %(message)")
+  message = Parent.waitString()
+  Parent.sendString("You wrote: %(message)")
 }

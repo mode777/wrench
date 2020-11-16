@@ -44,6 +44,9 @@ class NanovgApp {
       if(_event.type == SdlEventType.Keydown || _event.type == SdlEventType.Keyup){
         onKey(_event.key_sym, _event.type == SdlEventType.Keyup)
       }
+      if(_event.type == SdlEventType.Mousebuttondown){
+        System.print(_event.mouse_x)
+      }
     }
 
     var t = SDL.ticks / 1000

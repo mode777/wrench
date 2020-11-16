@@ -1,86 +1,17 @@
 #include <stdlib.h>
 #include "./wrt_plugin.h"
 #include <SDL2/SDL.h>
-#include "readfile.h"
-
-// --- Queue
-typedef struct {
-  int length;
-  const char* message;
-} Message;
-
-typedef struct {
-  int front;
-  int back;
-  int size;
-  int capacity;
-  SDL_mutex * mutex;
-  Message* messages;
-} Queue;
-
-static Queue* queue_create(int capacity){
-  Queue* q = calloc(1, sizeof(Queue));
-  q->messages = calloc(capacity, sizeof(Message));
-  q->capacity = capacity;
-  q->mutex = SDL_CreateMutex();
-  return q;
-}
-
-static bool queue_enqueue(Queue* q, char* message, int len) {
-  SDL_LockMutex(q->mutex);
-  if(q->size >= q->capacity){
-    return false;
-  }
-  q->messages[q->front].message = message;
-  q->messages[q->front].length = len;
-  q->front = (q->front+1) % q->capacity;
-  q->size++;
-  SDL_UnlockMutex(q->mutex);
-  return true;
-}
-
-static bool queue_dequeue(Queue* q, char** str, int* length){
-  SDL_LockMutex(q->mutex);
-  if(q->size == 0){
-    return false;
-  }
-  *str = q->messages[q->back].message;
-  *length = q->messages[q->back].length;
-  q->back = (q->back+1) % q->capacity;
-  q->size--;
-  SDL_UnlockMutex(q->mutex);
-  return true;
-}
-// ----
-
 
 int plugin_id;
 
 typedef struct {
-  WrenVM* creatorVm;
-  WrenVM* threadVm;
-  SDL_Thread* sdlThread;
-  const char* script;
-  const char* path;
-  WrenInterpretResult result;
-  Queue* creatorQueue;
-  Queue* threadQueue;
-} WrenThreadData;
-
-typedef struct {
   WrenHandle* loopHandle;
   WrenHandle* callHandle_0;
-  WrenThreadData* threadInfo;
 } SdlData;
 
 static void wren_start(WrenVM* vm){
   SdlData* sd = calloc(1, sizeof(SdlData));
   sd->callHandle_0 = wrenMakeCallHandle(vm, "call()");
-  // todo: avoid using this hack
-  WrenThreadData* threadData = wrt_get_plugin_data(vm, plugin_id);
-  if(threadData != NULL){
-    sd->threadInfo = threadData;
-  }
   wrt_set_plugin_data(vm, plugin_id, sd);
 }
 
@@ -172,30 +103,24 @@ static void wren_sdl_SdlEvent_finalize(void* window){
   // OK
 }
 
-static void wren_sdl_SdlEvent_type(WrenVM* vm){
-  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotDouble(vm, 0, ev->type);
+#define WREN_SDL_EVENT_PROP(NAME, MEMBER) static void wren_sdl_SdlEvent_##NAME(WrenVM* vm){\
+  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);\
+  wrenSetSlotDouble(vm, 0, (double)ev->MEMBER);\
 }
+
+WREN_SDL_EVENT_PROP(type, type)
 
 static void wren_sdl_SdlEvent_key_isRepeat(WrenVM* vm){
   SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
   wrenSetSlotBool(vm, 0, ev->key.repeat > 0);
 }
 
-static void wren_sdl_SdlEvent_key_sym(WrenVM* vm){
-  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotDouble(vm, 0, (double)ev->key.keysym.sym);
-}
-
-static void wren_sdl_SdlEvent_touch_x(WrenVM* vm){
-  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotDouble(vm, 0, (double)ev->tfinger.x);
-}
-
-static void wren_sdl_SdlEvent_touch_y(WrenVM* vm){
-  SDL_Event* ev = (SDL_Event*)wrenGetSlotForeign(vm, 0);
-  wrenSetSlotDouble(vm, 0, (double)ev->tfinger.y);
-}
+WREN_SDL_EVENT_PROP(key_sym, key.keysym.sym)
+WREN_SDL_EVENT_PROP(touch_x, tfinger.x)
+WREN_SDL_EVENT_PROP(touch_y, tfinger.y)
+WREN_SDL_EVENT_PROP(mouse_x, button.x)
+WREN_SDL_EVENT_PROP(mouse_y, button.y)
+WREN_SDL_EVENT_PROP(mouse_button, button.button)
 
 static void wren_sdl_SDL_delay_1(WrenVM* vm){
   int delay = wrenGetSlotDouble(vm,1);
@@ -249,111 +174,6 @@ static void wren_sdl_SDL_getMouseState_0(WrenVM* vm){
   wrenInsertInList(vm, 0, -1, 1);
 }
 
-
-int threadFunction( void* data )
-{
-  WrenThreadData* thread = (WrenThreadData*)data;
-  WrenInterpretResult result = wrenInterpret(thread->threadVm, thread->path, thread->script);
-  thread->result = result;
-  free(thread->script);
-  // todo: Cleanup client
-  return result;
-}
-
-static void wren_sdl_SdlThread_allocate(WrenVM* vm){
-  WrenThreadData* data = calloc(1, sizeof(WrenThreadData));
-  WrenThreadData** ptr = wrenSetSlotNewForeign(vm, 0,0, sizeof(WrenThreadData*));
-  *ptr = data;
-}
-
-static void wren_sdl_SdlThread_delete(WrenVM* vm){
-  // Creator is no longer interested in this thread. Release all resources on creator side
-  // todo: Cleanup server part
-}
-
-static void wren_sdl_SdlThread_create_1(WrenVM* vm){
-  WrenThreadData* thread = *(WrenThreadData**)wrenGetSlotForeign(vm ,0);
-  thread->result = (WrenInterpretResult)-1;
-  thread->path = wrenGetSlotString(vm, 1);
-  thread->script = read_file_string(thread->path);
-  thread->creatorQueue = queue_create(BUFSIZ);
-  thread->threadQueue = queue_create(BUFSIZ);
-  if(thread->script == NULL){
-    wren_runtime_error(vm, "Module not found");
-    return;
-  }
-  thread->creatorVm = vm;
-  thread->threadVm = wrt_new_wren_vm();
-  // todo: Avoid using this hack
-  wrt_set_plugin_data(thread->threadVm, plugin_id, (void*)thread);  
-
-  thread->sdlThread = SDL_CreateThread( threadFunction, "WrenThread", (void*)thread );
-}
-
-static void wren_sdl_SdlThread_isDone(WrenVM* vm){
-  WrenThreadData* thread = *(WrenThreadData**)wrenGetSlotForeign(vm ,0);
-  wrenSetSlotBool(vm, 0, thread->result != -1);
-}
-
-static void wren_sdl_SdlThread_result(WrenVM* vm){
-  WrenThreadData* thread = *(WrenThreadData**)wrenGetSlotForeign(vm ,0);
-  wrenSetSlotDouble(vm, 0, thread->result);
-}
-
-static void wren_sdl_SdlThread_sendParent_1(WrenVM* vm){
-  WrenThreadData* vmData = ((SdlData*)wrt_get_plugin_data(vm, plugin_id))->threadInfo;
-  int len;
-  const char* bytes = wrenGetSlotBytes(vm, 1, &len);
-  char* copy = malloc(len);
-  memcpy(copy, bytes, len);
-  wrenSetSlotBool(vm, 0, queue_enqueue(vmData->creatorQueue, copy, len));
-}
-
-static void wren_sdl_SdlThread_send_1(WrenVM* vm){
-  WrenThreadData* thread = *(WrenThreadData**)wrenGetSlotForeign(vm ,0);
-  int len;
-  const char* bytes = wrenGetSlotBytes(vm, 1, &len);
-  char* copy = malloc(len);
-  memcpy(copy, bytes, len);
-  wrenSetSlotBool(vm, 0, queue_enqueue(thread->threadQueue, copy, len));
-}
-
-static void wren_sdl_SdlThread_receiveParent_0(WrenVM* vm){
-  WrenThreadData* vmData = ((SdlData*)wrt_get_plugin_data(vm, plugin_id))->threadInfo;
-  int len;
-  char* msg;
-  bool success = queue_dequeue(vmData->threadQueue, &msg, &len);
-  if(success){
-    wrenSetSlotBytes(vm, 0, msg, len);
-    free(msg);
-  } else {
-    wrenSetSlotNull(vm, 0);
-  }
-}
-
-static void wren_sdl_SdlThread_receive_0(WrenVM* vm){
-  WrenThreadData* thread = *(WrenThreadData**)wrenGetSlotForeign(vm ,0);
-  int len;
-  char* msg;
-  bool success = queue_dequeue(thread->creatorQueue, &msg, &len);
-  if(success){
-    wrenSetSlotBytes(vm, 0, msg, len);
-    free(msg);
-  } else {
-    wrenSetSlotNull(vm, 0);
-  }
-}
-
-static void wren_sdl_SdlThread_countParent(WrenVM* vm){
-  WrenThreadData* vmData = ((SdlData*)wrt_get_plugin_data(vm, plugin_id))->threadInfo;
-  wrenSetSlotDouble(vm, 0, vmData->threadQueue->size);
-}
-
-static void wren_sdl_SdlThread_messageCount(WrenVM* vm){
-  WrenThreadData* thread = *(WrenThreadData**)wrenGetSlotForeign(vm ,0);
-  wrenSetSlotDouble(vm, 0, thread->creatorQueue->size);
-}
-
 void wrt_plugin_init(int handle){
   plugin_id = handle;
   SDL_Init(SDL_INIT_EVERYTHING);
@@ -372,6 +192,9 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("wren-sdl.SdlEvent.key_sym", wren_sdl_SdlEvent_key_sym);
   wrt_bind_method("wren-sdl.SdlEvent.touch_x", wren_sdl_SdlEvent_touch_x);
   wrt_bind_method("wren-sdl.SdlEvent.touch_y", wren_sdl_SdlEvent_touch_y);
+  wrt_bind_method("wren-sdl.SdlEvent.mouse_x", wren_sdl_SdlEvent_mouse_x);
+  wrt_bind_method("wren-sdl.SdlEvent.mouse_y", wren_sdl_SdlEvent_mouse_y);
+  wrt_bind_method("wren-sdl.SdlEvent.mouse_button", wren_sdl_SdlEvent_mouse_button);
 
   wrt_bind_method("wren-sdl.SDL.delay(_)", wren_sdl_SDL_delay_1);
   wrt_bind_method("wren-sdl.SDL.ticks", wren_sdl_SDL_ticks);
@@ -381,17 +204,6 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("wren-sdl.SDL.pollEvent(_)", wren_sdl_SDL_pollEvent_1);
   wrt_bind_method("wren-sdl.SDL.runLoop(_)", wren_sdl_SDL_runLoop_1);
   wrt_bind_method("wren-sdl.SDL.getMouseState()", wren_sdl_SDL_getMouseState_0);
-
-  wrt_bind_class("wren-sdl.SdlThread", wren_sdl_SdlThread_allocate, wren_sdl_SdlThread_delete);
-  wrt_bind_method("wren-sdl.SdlThread.create(_)", wren_sdl_SdlThread_create_1);
-  wrt_bind_method("wren-sdl.SdlThread.isDone", wren_sdl_SdlThread_isDone);
-  wrt_bind_method("wren-sdl.SdlThread.result", wren_sdl_SdlThread_result);
-  wrt_bind_method("wren-sdl.SdlThread.sendParent(_)", wren_sdl_SdlThread_sendParent_1);
-  wrt_bind_method("wren-sdl.SdlThread.send(_)", wren_sdl_SdlThread_send_1);
-  wrt_bind_method("wren-sdl.SdlThread.receiveParent()", wren_sdl_SdlThread_receiveParent_0);
-  wrt_bind_method("wren-sdl.SdlThread.receive()", wren_sdl_SdlThread_receive_0);
-  wrt_bind_method("wren-sdl.SdlThread.countParent", wren_sdl_SdlThread_countParent);
-  wrt_bind_method("wren-sdl.SdlThread.messageCount", wren_sdl_SdlThread_messageCount);
 
   wrt_wren_update_callback(wren_update);
 }

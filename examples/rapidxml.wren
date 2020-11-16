@@ -18,17 +18,7 @@ class XmlUtils {
 }
 
 var http = FetchClient.new()
-
-http.get("https://podcastd45a61.podigee.io/feed/mp3"){|status,content|
-
-  //System.print(content)
-
-  var doc = XmlDocument.new()
-  doc.parse(content)
-  //XmlUtils.traverse(doc.firstNode()) 
-}
-
-while(http.requests > 0){
-  http.update()
-}
+var content = http.get("https://podcastd45a61.podigee.io/feed/mp3").getResult()
+var doc = XmlDocument.new(content)
+XmlUtils.traverse(doc.firstNode())
 

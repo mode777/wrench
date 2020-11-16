@@ -3,83 +3,42 @@
 
 int plugin_handle;
 
-static void pack_value(msgpack_packer* packer, WrenVM* vm, int slot);
+typedef struct {
+  msgpack_sbuffer buffer;
+  msgpack_packer packer;
+} Serializer;
 
-static void pack_list(msgpack_packer* packer, WrenVM* vm, int slot){
-  int count = wrenGetListCount(vm, slot);
-  msgpack_pack_array(packer, count);
-  wrenEnsureSlots(vm, slot+2);
-  for (int i = 0; i < count; i++)
-  {
-    wrenGetListElement(vm, slot, i, slot+1);
-    pack_value(packer, vm, slot+1);
-  }  
-}
+typedef struct {
+  size_t size;
+  char* data;
+} Buffer;
 
-static void pack_map(msgpack_packer* packer, WrenVM* vm, int slot){
-  assert(false);
-}
+static void unpack_value(msgpack_object* obj, WrenVM* vm, int slot, WrenHandle* bufferClass);
 
-static void pack_value(msgpack_packer* packer, WrenVM* vm, int slot){
-  int length;
-  const char* bytes;
-
-  switch(wrenGetSlotType(vm, slot)){
-    case WREN_TYPE_BOOL:
-      wrenGetSlotBool(vm ,slot) ? msgpack_pack_true(packer) : msgpack_pack_false(packer);
-      break;
-    case WREN_TYPE_NUM:
-      msgpack_pack_double(packer, wrenGetSlotDouble(vm, slot));
-      break;
-    case WREN_TYPE_LIST:
-      pack_list(packer, vm, slot);
-      break;
-    case WREN_TYPE_MAP:
-      pack_map(packer, vm, slot);
-      break;
-    case WREN_TYPE_NULL:
-      msgpack_pack_nil(packer);
-      break;
-    case WREN_TYPE_STRING:
-      bytes = wrenGetSlotBytes(vm, slot, &length);
-      msgpack_pack_bin(packer, length);
-      msgpack_pack_bin_body(packer, (void*)bytes, length);
-      break;
-    case WREN_TYPE_FOREIGN:
-    case WREN_TYPE_UNKNOWN:
-      wren_runtime_error(vm, "Cannot serialize object. Only Bool, Num, List, Map, null and string are supported.");
-  }
-}
-
-static void wren_msgpack_MessagePack_serialize_1(WrenVM* vm){
-
-  msgpack_sbuffer sbuf;
-  msgpack_sbuffer_init(&sbuf);
-
-  /* serialize values into the buffer using msgpack_sbuffer_write callback function. */
-  msgpack_packer pk;
-  msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
-
-  pack_value(&pk, vm, 1);
-
-  wrenSetSlotBytes(vm, 0, sbuf.data, sbuf.size);
-  msgpack_sbuffer_destroy(&sbuf);
-}
-
-static void unpack_value(msgpack_object* obj, WrenVM* vm, int slot);
-
-static void unpack_array(msgpack_object_array* obj, WrenVM* vm, int slot){
+static void unpack_array(msgpack_object_array* obj, WrenVM* vm, int slot, WrenHandle* bufferClass){
   int size = obj->size;
   wrenSetSlotNewList(vm, slot);
   wrenEnsureSlots(vm, slot+2);
   for (int i = 0; i < size; i++)
   {
-    unpack_value(&obj->ptr[i], vm, slot+1);
+    unpack_value(&obj->ptr[i], vm, slot+1, bufferClass);
     wrenInsertInList(vm, slot, -1, slot+1);
   }
 }
 
-static void unpack_value(msgpack_object* obj, WrenVM* vm, int slot){
+static void unpack_map(msgpack_object_map* obj, WrenVM* vm, int slot, WrenHandle* bufferClass){
+  int size = obj->size;
+  wrenSetSlotNewMap(vm, slot);
+  wrenEnsureSlots(vm, slot+3);
+  for (int i = 0; i < size; i++)
+  {
+    unpack_value(&obj->ptr[i].key, vm, slot+1, bufferClass);
+    unpack_value(&obj->ptr[i].val, vm, slot+2, bufferClass);
+    wrenSetMapValue(vm, slot, slot+1, slot+2);
+  }
+}
+
+static void unpack_value(msgpack_object* obj, WrenVM* vm, int slot, WrenHandle* bufferClass){
   switch(obj->type){
     case MSGPACK_OBJECT_NIL:
     case MSGPACK_OBJECT_EXT:
@@ -102,30 +61,128 @@ static void unpack_value(msgpack_object* obj, WrenVM* vm, int slot){
       wrenSetSlotBytes(vm, slot, obj->via.str.ptr, obj->via.str.size);
       break;
     case MSGPACK_OBJECT_BIN:
-      wrenSetSlotBytes(vm, slot, obj->via.bin.ptr, obj->via.bin.size);
+      wrenSetSlotHandle(vm, slot, bufferClass);
+      Buffer* buffer = (Buffer*)wrenSetSlotNewForeign(vm, slot, slot, sizeof(Buffer));
+      buffer->data = (char*)obj->via.bin.ptr;
+      buffer->size = obj->via.bin.size;
       break;
     case MSGPACK_OBJECT_ARRAY:
-      unpack_array(&obj->via.array, vm, slot);
+      unpack_array(&obj->via.array, vm, slot, bufferClass);
       break;
     case MSGPACK_OBJECT_MAP:
-      assert(false);
+      unpack_map(&obj->via.map, vm, slot, bufferClass);
+      break;
+    default:
+      wren_runtime_error(vm, "Cannot deserialize unsupported object");
   }
 }
 
-static void wren_msgpack_MessagePack_deserialize_1(WrenVM* vm){
-  int length;
-  const char* bytes = wrenGetSlotBytes(vm, 1, &length);
-  msgpack_unpacked msg;
-  msgpack_unpacked_init(&msg);
-  msgpack_unpack_return ret = msgpack_unpack_next(&msg, bytes, length, NULL);
-  assert(ret == MSGPACK_UNPACK_SUCCESS);
-  msgpack_object root = msg.data;
-  unpack_value(&root, vm, 0);
-  msgpack_unpacked_destroy(&msg);
+static void serializer_init(Serializer* s){
+  msgpack_sbuffer_init(&s->buffer);
+  msgpack_packer_init(&s->packer, &s->buffer, msgpack_sbuffer_write);
+}
+
+static void serializer_allocate(WrenVM* vm){
+  Serializer* serializer = (Serializer*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(Serializer));
+  serializer_init(serializer);
+}
+
+static void serializer_delete(void* data){
+  Serializer* serializer = (Serializer*)data;
+  if(serializer->buffer.data != NULL) free(serializer->buffer.data);
+}
+
+static void serializer_getBuffer_1(WrenVM* vm){
+  Serializer* serializer = (Serializer*)wrenGetSlotForeign(vm, 0);
+  Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 1);
+  // Be aware that the amount of memory allocated might be larger than size
+  // however the surplus will be cleared when the buffer is freed.
+  // Alternative would be to copy the memory before putting it into the buffer.
+  buffer->data = serializer->buffer.data;
+  buffer->size = serializer->buffer.size;
+  serializer_init(serializer);
+}
+
+static void serializer_packList_1(WrenVM* vm){
+  msgpack_packer* packer = &((Serializer*)wrenGetSlotForeign(vm, 0))->packer;
+  size_t size = wrenGetSlotDouble(vm, 1);
+  msgpack_pack_array(packer, size);
+}
+
+static void serializer_packMap_1(WrenVM* vm){
+  msgpack_packer* packer = &((Serializer*)wrenGetSlotForeign(vm, 0))->packer;
+  size_t size = wrenGetSlotDouble(vm, 1);
+  msgpack_pack_map(packer, size);
+}
+
+static void serializer_packBool_1(WrenVM* vm){
+  msgpack_packer* packer = &((Serializer*)wrenGetSlotForeign(vm, 0))->packer;
+  bool val = wrenGetSlotBool(vm, 1);
+  val ? msgpack_pack_true(packer) : msgpack_pack_false(packer);
+}
+
+static void serializer_packDouble_1(WrenVM* vm){
+  msgpack_packer* packer = &((Serializer*)wrenGetSlotForeign(vm, 0))->packer;
+  double val = wrenGetSlotDouble(vm, 1);
+  msgpack_pack_double(packer, val);
+}
+
+static void serializer_packNull_0(WrenVM* vm){
+  msgpack_packer* packer = &((Serializer*)wrenGetSlotForeign(vm, 0))->packer;
+  msgpack_pack_nil(packer);
+}
+
+static void serializer_packBuffer_1(WrenVM* vm){
+  msgpack_packer* packer = &((Serializer*)wrenGetSlotForeign(vm, 0))->packer;
+  Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 1);
+  msgpack_pack_bin(packer, buffer->size);
+  msgpack_pack_bin_body(packer, buffer->data, buffer->size);
+}
+
+static void serializer_packString_1(WrenVM* vm){
+  msgpack_packer* packer = &((Serializer*)wrenGetSlotForeign(vm, 0))->packer;
+  int size;
+  const char* str = wrenGetSlotBytes(vm, 1, &size);
+  msgpack_pack_str(packer, size);
+  msgpack_pack_str_body(packer, str, (size_t)size);
+}
+
+static void deserializer_allocate(WrenVM* vm){
+  msgpack_unpacked* unpacked = (msgpack_unpacked*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(msgpack_unpacked));
+  msgpack_unpacked_init(unpacked);
+}
+
+static void deserializer_delete(void* data){
+  msgpack_unpacked_destroy((msgpack_unpacked*)data);
+}
+
+static void deserializer_deserialize_2(WrenVM* vm){
+  msgpack_unpacked* unpacked = (msgpack_unpacked*)wrenGetSlotForeign(vm, 0);
+  WrenHandle* handle = wrenGetSlotHandle(vm, 1);
+  Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 2);
+  msgpack_unpack_return ret = msgpack_unpack_next(unpacked, buffer->data, buffer->size, NULL);
+  if(ret != MSGPACK_UNPACK_SUCCESS){
+    wren_runtime_error(vm, "Unable to deserialize data");
+    wrenReleaseHandle(vm, handle);
+  }
+  unpack_value(&unpacked->data, vm, 0, handle);
+  wrenReleaseHandle(vm, handle);
 }
 
 void wrt_plugin_init(int handle){
   plugin_handle = handle;
-  wrt_bind_method("wren-msgpack.MessagePack.serialize(_)", wren_msgpack_MessagePack_serialize_1);
-  wrt_bind_method("wren-msgpack.MessagePack.deserialize(_)", wren_msgpack_MessagePack_deserialize_1);
+  
+  wrt_bind_class("wren-msgpack.Serializer", serializer_allocate, serializer_delete);
+  wrt_bind_method("wren-msgpack.Serializer.getBuffer_(_)", serializer_getBuffer_1);
+  wrt_bind_method("wren-msgpack.Serializer.packList_(_)", serializer_packList_1);
+  wrt_bind_method("wren-msgpack.Serializer.packMap_(_)", serializer_packMap_1);
+  wrt_bind_method("wren-msgpack.Serializer.packBool_(_)", serializer_packBool_1);
+  wrt_bind_method("wren-msgpack.Serializer.packDouble_(_)", serializer_packDouble_1);
+  wrt_bind_method("wren-msgpack.Serializer.packNull_()", serializer_packNull_0);
+  wrt_bind_method("wren-msgpack.Serializer.packBuffer_(_)", serializer_packBuffer_1);
+  wrt_bind_method("wren-msgpack.Serializer.packString_(_)", serializer_packString_1);
+
+  wrt_bind_class("wren-msgpack.Deserializer", deserializer_allocate, deserializer_delete);
+  wrt_bind_method("wren-msgpack.Deserializer.deserialize_(_,_)", deserializer_deserialize_2);
+
 }

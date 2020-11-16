@@ -4,7 +4,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/linux
 
 DLLFLAGS =-shared -Wl,-no-undefined -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf -lm
 
-all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so
+all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so images.so threads.so buffers.so
 
 wrench: $(OBJ) $(OBJ_WREN)
 	gcc -o $@ $(OBJ) $(OBJ_WREN) -ldl -lm
@@ -39,6 +39,18 @@ wren-msgpack.so: $(OBJ_MSGPACK)
 
 wren_rapidxml.o: wren_rapidxml.cpp
 	g++ -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -fpermissive
+
+buffers.so: $(OBJ_BUFFERS)
+	gcc -o $@ $(OBJ_BUFFERS) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
+images.so: $(OBJ_IMAGE)
+	gcc -o $@ $(OBJ_IMAGE) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
+threads.so: $(OBJ_THREAD)
+	gcc -o $@ $(OBJ_THREAD) $(DLLFLAGS) -L. -l:SDL2.dll
+	cp $@ ./wren_modules/$@
 
 %.o: %.c
 	gcc -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES)

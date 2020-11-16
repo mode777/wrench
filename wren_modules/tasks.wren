@@ -175,7 +175,7 @@ class TaskDriver {
     for(i in 0..._tasks.count){
       var t = _tasks[i]
       if(t.isDone) { 
-        _delete.add(i) 
+        _delete.insert(0, i)
       } else { 
         t.step() 
       }

@@ -1,10 +1,16 @@
-#include "./wrt_plugin.h"
 #include <rapidxml.hpp>
 #include <stdlib.h>
+#include "./wrt_plugin.h"
 
 // TODO: ERROR HANDLING!!!
 
 extern "C" {
+
+
+typedef struct {
+  size_t size;
+  char* data;
+}  Buffer;
 
 using namespace rapidxml;
 
@@ -166,10 +172,10 @@ FOREIGN_CLASS(XmlDocument, xml_document<>,ptr->obj = new xml_document<>;,if(ptr-
 
 static void wren_rapidxml_XmlDocument_parse_1(WrenVM* vm){
   XmlDocumentData* data = (XmlDocumentData*)wrenGetSlotForeign(vm, 0);
-  //lock string data in place
+  //lock buffer in place
   data->handle = wrenGetSlotHandle(vm, 1);
-  char* str = (char*)wrenGetSlotString(vm, 1);
-  data->obj->parse<0>(str);
+  Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 1);
+  data->obj->parse<0>(buffer->data);
 }
 
 static void wren_rapidxml_XmlDocument_firstNode_0(WrenVM* vm){

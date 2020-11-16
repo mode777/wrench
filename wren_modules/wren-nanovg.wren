@@ -61,14 +61,14 @@ foreign class NvgImage{
   construct fromFile(ctx, path){
     fromFile_(ctx, path)
   }
-  construct fromMemory(ctx, mem){
-    fromMemory_(ctx, mem)
+  construct fromBuffer(ctx, mem){
+    fromBuffer_(ctx, mem)
   }
   construct fromRgba(ctx, w, h, bytes){
     fromRgba_(ctx, w, h, bytes)
   }
   foreign fromFile_(ctx,path)
-  foreign fromMemory_(ctx,mem)
+  foreign fromBuffer_(ctx,mem)
   foreign fromRgba_(ctx,w, h, bytes)
   foreign width
   foreign height
@@ -143,27 +143,6 @@ foreign class NvgContext {
   foreign scissor(x,y,w,h)
   foreign intersectScissor(x,y,w,h)
   foreign resetScissor()
-}
-
-foreign class ImageData {
-  construct fromFile(path){
-    fromFile_(path)
-  }
-  construct fromMemory(data){
-    fromMemory_(data)
-  }
-  construct new(w,h){
-    init_(w,h)
-  }
-
-  foreign init_(w,h)
-  foreign fromFile_(p)
-  foreign fromMemory_(d)
-  foreign fromRgba_(w,h,d)
-  foreign bytes
-  foreign resize(w,h)
-  foreign width
-  foreign height
 }
 
 class TextAlign {

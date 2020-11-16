@@ -2,52 +2,9 @@
 #include <curl/curl.h>
 #include <stdlib.h>
 #include <time.h>
-
-#ifdef _WIN32
-#define WAITMS(x) Sleep(x)
-#else
-/* Portable sleep for platforms other than Windows. */
-#define WAITMS(x)                               \
-  struct timeval wait = { 0, (x) * 1000 };      \
-  (void)select(0, NULL, NULL, NULL, &wait);
-#endif
+#include <stdint.h>
 
 int plugin_id;
-
-typedef struct {
-  WrenHandle* loopHandle;
-  WrenHandle* callHandle_0;
-} CurlWrenData;
-
-static void wren_start(WrenVM* vm){
-  CurlWrenData* cd = calloc(1, sizeof(CurlWrenData));
-
-  cd->callHandle_0 = wrenMakeCallHandle(vm, "call()");
-
-  wrt_set_plugin_data(vm, plugin_id, cd);
-}
-
-static bool success;
-static WrenInterpretResult result = WREN_RESULT_COMPILE_ERROR;
-
-static void wren_update(WrenVM* vm){
-  CurlWrenData* cd = wrt_get_plugin_data(vm, plugin_id);
-
-  wrenEnsureSlots(vm, 1);
-
-  if(cd->loopHandle == NULL){
-    wrenSetSlotBool(vm, 0, false);
-    return;
-  }
-
-  wrenSetSlotHandle(vm, 0, cd->loopHandle);
-  result = wrenCall(vm, cd->callHandle_0);
-  success = wrenGetSlotBool(vm, 0);
-
-  wrenSetSlotBool(vm, 0, result == WREN_RESULT_SUCCESS && success);
-}
-
-int id = 0;
 
 typedef struct {
   CURL* handle;
@@ -56,12 +13,13 @@ typedef struct {
   char* data;
   size_t size;
   size_t allocated;
-  int id;
+  unsigned int id;
 } CurlData;
 
 static void wren_curl_CurlHandle_allocate(WrenVM* vm){
   CurlData* data = (CurlData*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(CurlData));
-  data->id = ++id;
+  // TODO: Is this pointer hashing safe (enough)?
+  data->id =((uintptr_t)data) % UINT_MAX;
   data->handle = curl_easy_init();
   //curl_easy_setopt(*handlePtr, CURLOPT_SSL_VERIFYPEER, 0L);
   //curl_easy_setopt(*handlePtr, CURLOPT_SSL_VERIFYHOST, 0L);
@@ -76,6 +34,7 @@ static void dispose_curl_data(CurlData* data){
   data->data = NULL;
   data->handle = NULL;
   data->size = 0;
+  data->allocated = 0;
 }
 
 static void wren_curl_CurlHandle_delete(void* data){
@@ -140,7 +99,7 @@ size_t curl_write_memory(void *contents, size_t size, size_t nmemb, void *userp)
   size_t realsize = size * nmemb;
   size_t totalsize = data->size + realsize;
 
-  if(totalsize > data->allocated){
+  while((totalsize+1) > data->allocated){
     size_t newsize = data->allocated * 2;
     char *ptr = realloc(data->data, newsize);
     if(ptr == NULL) {
@@ -149,11 +108,12 @@ size_t curl_write_memory(void *contents, size_t size, size_t nmemb, void *userp)
     }
     data->allocated = newsize;
     data->data = ptr;
+    //memset(&data->data[data->size], 0, data->allocated - data->size);
   } 
  
   memcpy(&(data->data[data->size]), contents, realsize);
   data->size += realsize;
-  //mem->memory[mem->size] = 0;
+  data->data[data->size] = 0;
  
   return realsize;
 }
@@ -161,20 +121,26 @@ size_t curl_write_memory(void *contents, size_t size, size_t nmemb, void *userp)
 static void wren_curl_CurlHandle_writeMemory_0(WrenVM* vm){
   CurlData* data = (CurlData*)wrenGetSlotForeign(vm, 0);
   data->allocated = 1024 * 16;
-  data->data = malloc(data->allocated);
+  data->data = calloc(1, data->allocated);
   data->size = 0;
   curl_easy_setopt(data->handle, CURLOPT_WRITEDATA, data);
   curl_easy_setopt(data->handle, CURLOPT_WRITEFUNCTION, curl_write_memory);
 }
 
-static void wren_curl_CurlHandle_getData_0(WrenVM* vm){
+typedef struct {
+  size_t size;
+  char* data;
+} Buffer;
+
+static void wren_curl_CurlHandle_getData_1(WrenVM* vm){
   CurlData* data = (CurlData*)wrenGetSlotForeign(vm, 0);
+  Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 1);
   if(data->data != NULL){
-    wrenSetSlotBytes(vm, 0, data->data, data->size);
+    buffer->data = data->data;
+    buffer->size = data->size;
+    data->data = NULL;
     data->size = 0;
     data->allocated = 0;
-    free(data->data);
-    data->data = NULL;
   } else {
     wrenSetSlotNull(vm, 0);
   }
@@ -272,25 +238,6 @@ static void wren_curl_CurlMessage_isDone(WrenVM* vm){
   wrenSetSlotBool(vm, 0, handlePtr->msg == CURLMSG_DONE);
 }
 
-static void wren_curl_CURL_runLoop_1(WrenVM* vm){
-  CurlWrenData* cd = wrt_get_plugin_data(vm, plugin_id);
-
-  if(cd->loopHandle != NULL){
-    wrenReleaseHandle(vm, cd->loopHandle);
-  }
-  cd->loopHandle = wrenGetSlotHandle(vm, 1);
-}
-
-static void wren_curl_CURL_sleep_1(WrenVM* vm){
-  int ms = wrenGetSlotDouble(vm, 1);
-  WAITMS(ms);
-}
-
-static void wren_curl_CURL_clock(WrenVM* vm){
-  clock_t c = clock();
-  wrenSetSlotDouble(vm, 0, ((double)c / (double)CLOCKS_PER_SEC) * 1000);
-}
-
 void wrt_plugin_init(int handle){
   plugin_id = handle;
   curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -303,7 +250,7 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("wren-curl.CurlHandle.id", wren_curl_CurlHandle_id);
   wrt_bind_method("wren-curl.CurlHandle.writeFile(_)", wren_curl_CurlHandle_writeFile_1);
   wrt_bind_method("wren-curl.CurlHandle.writeMemory()", wren_curl_CurlHandle_writeMemory_0);
-  wrt_bind_method("wren-curl.CurlHandle.getData()", wren_curl_CurlHandle_getData_0);
+  wrt_bind_method("wren-curl.CurlHandle.getData_(_)", wren_curl_CurlHandle_getData_1);
   wrt_bind_method("wren-curl.CurlHandle.dispose()", wren_curl_CurlHandle_dispose_0);
   wrt_bind_method("wren-curl.CurlHandle.responseCode", wren_curl_CurlHandle_responseCode);
 
@@ -317,15 +264,10 @@ void wrt_plugin_init(int handle){
   wrt_bind_class("wren-curl.CurlMessage", wren_curl_CurlMessage_allocate, wren_curl_CurlMessage_delete);
   wrt_bind_method("wren-curl.CurlMessage.getHandle()", wren_curl_CurlMessage_getHandle_0);
   wrt_bind_method("wren-curl.CurlMessage.isDone", wren_curl_CurlMessage_isDone);
-
-  wrt_bind_method("wren-curl.CURL.runLoop_(_)", wren_curl_CURL_runLoop_1);
-  wrt_bind_method("wren-curl.CURL.sleep(_)", wren_curl_CURL_sleep_1);
-  wrt_bind_method("wren-curl.CURL.clock", wren_curl_CURL_clock);
-
-  // todo: remove updates
-  //wrt_wren_update_callback(wren_update);
 }
 
+
+
 void wrt_plugin_init_wren(WrenVM* vm){
-  wren_start(vm);
+
 }
