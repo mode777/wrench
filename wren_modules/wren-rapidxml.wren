@@ -1,11 +1,12 @@
 
 foreign class XmlDocument {
-  construct new(str){
-    parse(str)
+  construct fromBuffer(buffer){
+    parseBuffer(buffer)
   }
-  foreign parse(str)
+  foreign parseBuffer(buffer)
   foreign firstNode()
   foreign firstNode(name)
+  foreign dispose()
 }
 
 foreign class XmlNode{

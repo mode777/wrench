@@ -1,3 +1,55 @@
+import "application" for Application
+
+class SdlApplication is Application {
+
+  width { _w }
+  height { _h }
+  title { _title }
+  window { _win }
+  
+  construct new(){
+    super()
+    _event = SdlEvent.new()
+    _flags = SdlWindowFlag.Shown|SdlWindowFlag.Resizable
+    sdlSetHints()
+  }
+
+  sdlAddWindowFlag(flag){
+    _flags = _flags | flag
+  }
+  sdlSetHints(){}
+
+  sdlCreateWindow(){
+    _win = SdlWindow.new(_w, _h, _title, _flags)
+  }
+
+  createWindow(w, h, title){
+    _w = w
+    _h = h
+    _title = title
+    sdlCreateWindow()
+  }
+
+  handleEvent(event){}
+
+  draw(){}
+
+  update(){
+    super()
+    while(SDL.pollEvent(_event)){
+      if(_event.type == SdlEventType.Quit) {
+        stop()
+      } else {
+        handleEvent(_event)
+      }
+    }
+    if(_win){
+      draw()
+      _win.swap()
+    }
+  }
+}
+
 foreign class SdlWindow {
   construct new(width, height, title, hints){
     create_(width, height, title, hints)
@@ -21,13 +73,80 @@ foreign class SdlEvent {
   }
 
   foreign type
-  foreign key_isRepeat
+  foreign timestamp
+  foreign display_display
+  foreign display_event
+  foreign display_data1
+  foreign window_event
+  foreign window_data1
+  foreign window_data2
+  foreign key_state
   foreign key_sym
-  foreign touch_x
-  foreign touch_y
-  foreign mouse_x
-  foreign mouse_y
-  foreign mouse_button
+  foreign key_scancode
+  foreign key_mod
+  foreign key_isRepeat
+  foreign edit_text
+  foreign edit_start
+  foreign edit_length
+  foreign text_text
+  foreign motion_which
+  foreign motion_state
+  foreign motion_x
+  foreign motion_y
+  foreign motion_xrel
+  foreign motion_yrel
+  foreign button_which
+  foreign button_button
+  foreign button_clicks
+  foreign button_x
+  foreign button_y
+  foreign wheel_which
+  foreign wheel_x
+  foreign wheel_y
+  foreign wheel_direction
+  foreign jaxis_which
+  foreign jaxis_axis
+  foreign jaxis_value
+  foreign jball_which
+  foreign jball_ball
+  foreign jball_xrel
+  foreign jball_yrel
+  foreign jhat_which
+  foreign jhat_hat
+  foreign jhat_value
+  foreign jbutton_which
+  foreign jbutton_button
+  foreign jbutton_state
+  foreign jdevice_which
+  foreign caxis_which
+  foreign caxis_axis
+  foreign caxis_value
+  foreign cbutton_which
+  foreign cbutton_button
+  foreign cbutton_state
+  foreign cdevice_which
+  foreign adevice_which
+  foreign adevice_isCapture
+  foreign tfinger_touchId
+  foreign tfinger_x
+  foreign tfinger_y
+  foreign tfinger_dx
+  foreign tfinger_dy
+  foreign tfinger_pressure
+  foreign mgesture_touchId
+  foreign mgesture_dTheta
+  foreign mgesture_dDist
+  foreign mgesture_x
+  foreign mgesture_y
+  foreign mgesture_numFingers
+  foreign dgesture_touchId
+  foreign dgesture_gestureId
+  foreign dgesture_numFingers
+  foreign dgesture_error
+  foreign dgesture_x
+  foreign dgesture_y
+  foreign drop_file
+  foreign sensor_which
 }
 
 class SDL {

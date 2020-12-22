@@ -30,7 +30,7 @@ static void image_fromFile_2(WrenVM* vm){
   int x,y,n;
   buffer->data = (char*)stbi_load(filename, &x, &y, &n, 4);
   if(buffer->data == NULL){
-    wren_runtime_error(vm, "Error loading image");
+    wren_runtime_error(vm, stbi_failure_reason());
     return;
   }
   buffer->size = x*y*n;
@@ -43,7 +43,7 @@ static void image_fromBuffer_2(WrenVM* vm){
   int x,y,n;
   dst->data = (char*)stbi_load_from_memory((const unsigned char*)src->data, (int)src->size, &x, &y, &n, 4);
   if(dst->data == NULL){
-    wren_runtime_error(vm, "Error loading image");
+    wren_runtime_error(vm, stbi_failure_reason());
     return;
   }
   dst->size = x*y*n;

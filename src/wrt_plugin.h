@@ -124,6 +124,10 @@ static void wren_runtime_error(WrenVM* vm, const char * error){
   wrenAbortFiber(vm, 0);
 }
 
+#define METHOD(NAME) static void NAME(WrenVM* vm)
+#define CONSTRUCTOR(NAME) static void NAME(WrenVM* vm)
+#define DESTRUCTOR(NAME) static void NAME(void* data)
+
 #ifdef __cplusplus
 }
 #endif

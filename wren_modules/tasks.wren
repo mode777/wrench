@@ -81,6 +81,7 @@ class Task {
 
   isDone { _fiber.isDone }
   result { _result }
+  error { _error }
 
   construct new(cancel, fn){
     _fiber = Fiber.new(fn)
@@ -131,7 +132,7 @@ class Task {
       returnVal = _fiber.call(_cancel)
     }
     if(_fiber.error){
-      handleError_(_fiber.error)
+      handleError_(_fiber.error, _fiber.stackTrace)
     } else if(returnVal) {
       handleResult_(returnVal)
     }
@@ -147,11 +148,12 @@ class Task {
     }
   }
 
-  handleError_(error){
+  handleError_(error, stack){
     _error = error
     if(_catch){
-      _catch.call(error)
+      _catch.call(error, stack)
     } else {
+      System.print("Original Error: %(error)\n%(stack)")
       Fiber.abort(error)
     }
   }

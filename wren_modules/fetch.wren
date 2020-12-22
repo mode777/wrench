@@ -45,9 +45,9 @@ class FetchClient {
     var status = handle.responseCode
     if(status >= 200 && status < 300){
       var data = handle.getData()
+      handle.dispose()
       return data
     }
-    handle.dispose()
     Fiber.abort("Request to %(url) returned non-success status code %(status)")
   }
 

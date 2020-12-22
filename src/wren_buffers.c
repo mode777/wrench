@@ -22,7 +22,7 @@ static void buffer_create_1(WrenVM* vm){
   Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 0);
   buffer->size = wrenGetSlotDouble(vm, 1);
   if(buffer->size != 0){
-    buffer->data = (char*)calloc(1, buffer->size);
+    buffer->data = (char*)calloc(buffer->size, sizeof(char));
     check_buffer(buffer, vm);
   }
 }
@@ -30,6 +30,8 @@ static void buffer_create_1(WrenVM* vm){
 static void buffer_free(void* data){
   Buffer* buffer = (Buffer*)data;
   if(buffer->data != NULL) free(buffer->data);
+  buffer->size = 0;
+  buffer->data = NULL;
 }
 
 static void buffer_resize_1(WrenVM* vm){
@@ -89,7 +91,6 @@ static void buffer_toBytes_1(WrenVM* vm){
 
 static void buffer_dispose_0(WrenVM* vm){
   Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 0);
-  buffer->size = 0;
   buffer_free((void*)buffer);
 }
 

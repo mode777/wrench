@@ -2,3 +2,4 @@
 *.dll
 *.exe
 *.so
+examples/podcast_player/cache

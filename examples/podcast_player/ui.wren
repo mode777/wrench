@@ -1,6 +1,54 @@
 import "wren-nanovg" for NvgColor, NvgImage, NvgPaint, Winding, NvgFont, TextAlign
 import "tasks" for TaskQueue, DefaultCanceller
 import "tween" for Tween, TweenEaseOutCubic, TweenLinear, TweenEaseOutQuad 
+import "collections" for Queue
+import "wren-forms" for Form, FlowLayout, Button, Label
+
+class PodcastForm is Form {
+  construct new(app, model){
+    super(app)
+    _model = model
+    size = [800,480]
+    name = "Podcast Player"
+  }
+
+  init(){
+    _label = application.resolve(Label)
+    _label.configure({
+      "visualStyle": { "font-size": 20 }
+    })
+
+    _feedLayout = application.resolve(FlowLayout)
+    _feedLayout.configure({
+      "position": [0, 70],
+      "size": size,
+      "visualStyle": { "spacing": 20 },
+      "binding": {
+        "source": _model,
+        "element": {
+          "control": Button,
+          "config": {
+            "size": [175,175],
+            "visualStyle": {
+              "borderRadius": 5,
+              "padding": [10, 20],
+              "foreground": NvgColor.rgba(200,200,200,255),
+              "font": "font::./examples/podcast_player/res/Roboto-Bold.ttf"
+            },
+            "binding": {
+              "properties": {
+                "text": "title",
+                "background-image": "image"
+              }
+            }
+          }
+        }
+      }
+    })
+
+    controls.add(_feedLayout)
+  }
+}
 
 class Resources {
   static getRegularFont(ctx) { __font = __font || NvgFont.fromFile(ctx, "./examples/podcast_player/res/Roboto-Regular.ttf") }
@@ -40,9 +88,8 @@ class Spinner {
 }
 
 class Feed {
-  construct new(ev, url){
-    _events = ev
-    _url = url
+  construct new(model){
+    _model = model
     _animationQueue = TaskQueue.new(16, DefaultCanceller)
     _alpha = 0
     _textAlpha = 0
@@ -115,35 +162,15 @@ class Feed {
 }
 
 class FeedList {
-  construct new(ev){
-    _feeds = []
-    _have = {}
-    _events = ev
-    ev.subscribe("pc.feed.info"){ |ev| onFeedInfo(ev) }
-    ev.subscribe("pc.feed.download"){ |ev| onFeedDownload(ev) }
-    ev.subscribe("pc.rgba.loaded"){ |ev| onImage(ev) }
+  construct new(model){
+    _model = model
     _size = 175
   }
 
-  onImage(ev){
-    var feed = _have[ev["url"]]
-    if(feed){
-      feed.addImage(ev["width"],ev["height"],ev["data"])
-      ev["data"].dispose()
+  init(){
+    for(fi in _model){
+      addFeed(fi)
     }
-  }
-  
-  onFeedInfo(ev){
-    var feed = _have[ev["url"]]
-    feed.addInfo(ev["title"], ev["description"])
-    if(ev["imageUrl"]) _events.add({"id":"pc.image.download", "url": ev["url"], "imageUrl": ev["imageUrl"], "width": 256, "height": 256})
-  }
-
-  onFeedDownload(ev){
-    var feed = Feed.new(_events, ev["url"])
-    feed.fade(1, 1)
-    _feeds.add(feed)
-    _have[ev["url"]] = feed
   }
 
   draw(ctx,x,y,w,h,t){
@@ -164,13 +191,21 @@ class FeedList {
       ey = ey + eh + gap
     }
   }
+
+  addFeed(model){
+    var f = Feed.new(model)
+    f.fade(1,1)
+    _feeds.add(f)
+  }
+
+  addInfo(url, title, description){
+
+  }
 }
 
 class MainLayout {
-  construct new(ev){
-    _feedList = FeedList.new(ev)
-    _events = ev
-
+  construct new(fl){
+    _feedList = fl
   }
 
   draw(ctx,x,y,w,h,t){
@@ -179,14 +214,15 @@ class MainLayout {
 }
 
 class PodcastUI {
-  construct new(ev){
-    _mainLayout = MainLayout.new(ev)
+
+  construct new(ev, layout){
     _events = ev
+    _mainLayout = layout
     _currentLayout = _mainLayout
   }
 
   draw(ctx,x,y,w,h,t){
-    _mainLayout.draw(ctx,x,y,w,h,t)
+    _currentLayout.draw(ctx,x,y,w,h,t)
   }
 
 }

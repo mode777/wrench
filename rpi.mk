@@ -4,7 +4,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/linux
 
 DLLFLAGS =-shared -Wl,-no-undefined -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf -lm
 
-all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so images.so threads.so buffers.so wren-msgpack.so
+all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so images.so threads.so buffers.so wren-msgpack.so file.so
 
 wrench: $(OBJ) $(OBJ_WREN)
 	gcc -o $@ $(OBJ) $(OBJ_WREN) -ldl -lm
@@ -26,7 +26,7 @@ wren-nanovg.so: $(OBJ_NVG)
 	cp $@ ./wren_modules/$@
 
 wren-curl.so: $(OBJ_CURL)
-	gcc -o $@ $(OBJ_CURL) $(DLLFLAGS) -lcurl
+	gcc -o $@ $(OBJ_CURL) $(DLLFLAGS) -lcurl -lcrypto
 	cp $@ ./wren_modules/$@
 
 wren-rapidxml.so: wren_rapidxml.o
@@ -45,6 +45,10 @@ buffers.so: $(OBJ_BUFFERS)
 	cp $@ ./wren_modules/$@
 
 images.so: $(OBJ_IMAGE)
+	gcc -o $@ $(OBJ_IMAGE) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
+
+file.so: $(OBJ_FILE)
 	gcc -o $@ $(OBJ_IMAGE) $(DLLFLAGS)
 	cp $@ ./wren_modules/$@
 

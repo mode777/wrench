@@ -249,7 +249,7 @@ static void load_plugin(WrenVM* vm, const char * in_name){
   MUTEX_UNLOCK(&mutex);
 }
 
-static char* load_module_fn(WrenVM* vm, const char* name){
+static WrenLoadModuleResult load_module_fn(WrenVM* vm, const char* name){
   char strbuffer[1024];
   char dllbuffer[1024];
 
@@ -272,7 +272,12 @@ static char* load_module_fn(WrenVM* vm, const char* name){
     strcat(strbuffer, ".wren");
   }
 
-  return read_file_string(strbuffer);
+  const char * string = read_file_string(strbuffer);
+
+  WrenLoadModuleResult result = {0};
+  //result.onComplete = loadModuleComplete;
+  result.source = string;
+  return result;
 }
 
 static WrenVM* wrt_new_wren_vm(){
@@ -284,9 +289,9 @@ static WrenVM* wrt_new_wren_vm(){
   config.loadModuleFn = load_module_fn;
   config.bindForeignMethodFn = bindMethodFunc;
   config.bindForeignClassFn = bindClassFunc;
-  config.initialHeapSize = 1024 * 1024 * 2;
-  config.minHeapSize = 1024 * 512;
-  config.heapGrowthPercent = 15;
+  //config.initialHeapSize = 1024 * 1024 * 100;
+  // config.minHeapSize = 1024 * 512;
+  // config.heapGrowthPercent = 15;
   WrenVM* vm = wrenNewVM(&config);
   WrenUserData* ud = calloc(1, sizeof(WrenUserData)); 
   wrenSetUserData(vm, (void*)ud);

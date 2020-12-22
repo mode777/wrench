@@ -1,5 +1,6 @@
 #include "./wrt_plugin.h"
 #include <curl/curl.h>
+#include <openssl/md5.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdint.h>
@@ -142,6 +143,10 @@ static void wren_curl_CurlHandle_getData_1(WrenVM* vm){
     data->size = 0;
     data->allocated = 0;
   } else {
+    if(data->file != NULL){
+      fclose(data->file);
+      data->file = NULL;
+    }
     wrenSetSlotNull(vm, 0);
   }
 }
@@ -238,6 +243,20 @@ static void wren_curl_CurlMessage_isDone(WrenVM* vm){
   wrenSetSlotBool(vm, 0, handlePtr->msg == CURLMSG_DONE);
 }
 
+// https://stackoverflow.com/questions/7627723/how-to-create-a-md5-hash-of-a-string-in-c
+static void wren_curl_MD5_fromString_1(WrenVM* vm){
+  int len;
+  const char* bytes = wrenGetSlotBytes(vm, 1, &len);
+  unsigned char digest[16];
+  MD5_CTX context;
+  MD5_Init(&context);
+  MD5_Update(&context, bytes, len);
+  MD5_Final(digest, &context);
+  char md5string[33];
+  for(int i = 0; i < 16; ++i) sprintf(&md5string[i*2], "%02x", (unsigned int)digest[i]);
+  wrenSetSlotString(vm, 0, (const char *)&md5string[0]);
+}
+
 void wrt_plugin_init(int handle){
   plugin_id = handle;
   curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -264,6 +283,9 @@ void wrt_plugin_init(int handle){
   wrt_bind_class("wren-curl.CurlMessage", wren_curl_CurlMessage_allocate, wren_curl_CurlMessage_delete);
   wrt_bind_method("wren-curl.CurlMessage.getHandle()", wren_curl_CurlMessage_getHandle_0);
   wrt_bind_method("wren-curl.CurlMessage.isDone", wren_curl_CurlMessage_isDone);
+
+  wrt_bind_method("wren-curl.MD5.fromString(_)", wren_curl_MD5_fromString_1);
+
 }
 
 

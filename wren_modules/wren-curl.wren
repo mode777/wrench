@@ -46,3 +46,7 @@ foreign class CurlMessage{
   foreign getHandle()
   foreign isDone
 }
+
+class MD5 {
+  foreign static fromString(str)
+}

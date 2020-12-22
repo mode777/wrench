@@ -5,7 +5,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/win32
 DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc
 
 
-all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll images.dll threads.dll buffers.dll wren-msgpack.dll
+all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll images.dll threads.dll buffers.dll wren-msgpack.dll file.dll
 
 test.exe: test.o 
 	gcc -o $@ test.o -L./lib -lcurl
@@ -18,7 +18,7 @@ nanovg_demo.exe: $(OBJ_NVG_DEMO)
 	cp nanovg_demo.exe nanovg/example/demo.exe
 
 wren-sdl.dll: $(OBJ_SDL)
-	gcc -o $@ $(OBJ_SDL) $(DLLFLAGS) -L. -l:SDL2.dll -L./lib -l:libEGL.lib
+	gcc -o $@ $(OBJ_SDL) $(DLLFLAGS) -L. -l:SDL2.dll
 	cp $@ ./wren_modules/$@
 
 wren-glfw.dll: $(OBJ_GLFW)
@@ -38,7 +38,7 @@ wren-nanovg.dll: $(OBJ_NVG)
 	cp $@ ./wren_modules/$@
 
 wren-curl.dll: $(OBJ_CURL)
-	gcc -o $@ $(OBJ_CURL) $(DLLFLAGS) -L. -l:libcurl.dll
+	gcc -o $@ $(OBJ_CURL) $(DLLFLAGS) -L. -l:libcurl.dll -l:libssl-1_1.dll -l:libcrypto-1_1.dll
 	cp $@ ./wren_modules/$@
 
 wren-rapidxml.dll: wren_rapidxml.o
@@ -63,6 +63,10 @@ threads.dll: $(OBJ_THREAD)
 
 wren_rapidxml.o: wren_rapidxml.cpp
 	g++ -o $@ -c $< -fPIC -O3 -Wall $(INCLUDES) -DDEBUG -fpermissive
+
+file.dll: $(OBJ_FILE)
+	gcc -o $@ $(OBJ_FILE) $(DLLFLAGS)
+	cp $@ ./wren_modules/$@
 
 %.o: %.c
 	gcc -o $@ -c $< -fPIC -g -O0 -Wall $(INCLUDES) -DDEBUG

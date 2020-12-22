@@ -63,7 +63,8 @@ static void unpack_value(msgpack_object* obj, WrenVM* vm, int slot, WrenHandle* 
     case MSGPACK_OBJECT_BIN:
       wrenSetSlotHandle(vm, slot, bufferClass);
       Buffer* buffer = (Buffer*)wrenSetSlotNewForeign(vm, slot, slot, sizeof(Buffer));
-      buffer->data = (char*)obj->via.bin.ptr;
+      buffer->data = malloc(obj->via.bin.size);
+      memcpy((void*)buffer->data, (void*)obj->via.bin.ptr, obj->via.bin.size);
       buffer->size = obj->via.bin.size;
       break;
     case MSGPACK_OBJECT_ARRAY:
@@ -164,9 +165,10 @@ static void deserializer_deserialize_2(WrenVM* vm){
   if(ret != MSGPACK_UNPACK_SUCCESS){
     wren_runtime_error(vm, "Unable to deserialize data");
     wrenReleaseHandle(vm, handle);
+  } else {
+    unpack_value(&unpacked->data, vm, 0, handle);
+    wrenReleaseHandle(vm, handle);
   }
-  unpack_value(&unpacked->data, vm, 0, handle);
-  wrenReleaseHandle(vm, handle);
 }
 
 void wrt_plugin_init(int handle){

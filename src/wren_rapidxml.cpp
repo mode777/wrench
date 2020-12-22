@@ -170,12 +170,17 @@ static void wren_rapidxml_XmlNode_firstAttribute_1(WrenVM* vm){
 
 FOREIGN_CLASS(XmlDocument, xml_document<>,ptr->obj = new xml_document<>;,if(ptr->obj != NULL) { ptr->obj->clear(); })
 
-static void wren_rapidxml_XmlDocument_parse_1(WrenVM* vm){
+static void wren_rapidxml_XmlDocument_parseBuffer_1(WrenVM* vm){
   XmlDocumentData* data = (XmlDocumentData*)wrenGetSlotForeign(vm, 0);
   //lock buffer in place
   data->handle = wrenGetSlotHandle(vm, 1);
   Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 1);
   data->obj->parse<0>(buffer->data);
+}
+
+static void wren_rapidxml_XmlDocument_dispose_0(WrenVM* vm){
+  XmlDocumentData* data = (XmlDocumentData*)wrenGetSlotForeign(vm, 0);
+  wren_rapidxml_XmlDocument_delete((void*)data);
 }
 
 static void wren_rapidxml_XmlDocument_firstNode_0(WrenVM* vm){
@@ -209,9 +214,10 @@ static void wren_rapidxml_RapidXml_init__0(WrenVM* vm){
     plugin_id = handle;
 
     wrt_bind_class("wren-rapidxml.XmlDocument", wren_rapidxml_XmlDocument_allocate, wren_rapidxml_XmlDocument_delete);
-    wrt_bind_method("wren-rapidxml.XmlDocument.parse(_)", wren_rapidxml_XmlDocument_parse_1);
+    wrt_bind_method("wren-rapidxml.XmlDocument.parseBuffer(_)", wren_rapidxml_XmlDocument_parseBuffer_1);
     wrt_bind_method("wren-rapidxml.XmlDocument.firstNode()", wren_rapidxml_XmlDocument_firstNode_0);
     wrt_bind_method("wren-rapidxml.XmlDocument.firstNode(_)", wren_rapidxml_XmlDocument_firstNode_1);
+    wrt_bind_method("wren-rapidxml.XmlDocument.dispose()", wren_rapidxml_XmlDocument_dispose_0);
 
     wrt_bind_class("wren-rapidxml.XmlNode", wren_rapidxml_XmlNode_allocate, wren_rapidxml_XmlNode_delete);
     wrt_bind_method("wren-rapidxml.XmlNode.name()", wren_rapidxml_XmlNode_name_0);

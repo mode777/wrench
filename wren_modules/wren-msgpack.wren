@@ -5,7 +5,10 @@ foreign class Deserializer {
 
   foreign deserialize_(bufferClass, buffer)
 
-  deserialize(buffer){ deserialize_(Buffer,buffer) }
+  deserialize(buffer){ 
+    var ret = deserialize_(Buffer,buffer) 
+    return ret
+  }
 }
 
 foreign class Serializer {

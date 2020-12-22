@@ -1,0 +1,1 @@
+./wrench.exe ./tests/main.wren

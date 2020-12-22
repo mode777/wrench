@@ -1,5 +1,32 @@
 import "collections" for Queue
 
+class Event {
+  construct new(){
+    _handlers = []
+  }
+
+  subscribe(handler){
+    _handlers.add(handler)
+  }
+
+  unsubscribe(handler){
+    var idx = -1
+    for(i in 0..._handlers.count){
+      if(_handlers[i] == handler){
+        idx = i
+        break
+      }
+    }
+    if(idx != -1) _handlers.removeAt(idx)
+  }
+
+  dispatch(data){
+    for(h in _handlers){
+      h.call(data)
+    }
+  }
+}
+
 class EventQueue {
 
   count { _queue.count  }
