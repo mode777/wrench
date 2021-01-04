@@ -134,7 +134,7 @@ class MyApp is Gles2Application {
       swap()
       _frames = _frames+1
       _frameTime = _frameTime + System.clock - _time
-      if(_frames == 60){
+      if(_frames == 100){
         System.print("Frametime %(_frameTime * 10)ms")
         _frames = 0
         _frameTime = 0
