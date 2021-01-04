@@ -26,7 +26,7 @@ wren-nanovg.so: $(OBJ_NVG)
 	cp $@ ./wren_modules/$@
 
 wren-curl.so: $(OBJ_CURL)
-	gcc -o $@ $(OBJ_CURL) $(DLLFLAGS) -lcurl
+	gcc -o $@ $(OBJ_CURL) $(DLLFLAGS) -lcurl -lcrypto
 	cp $@ ./wren_modules/$@
 
 wren-rapidxml.so: wren_rapidxml.o
