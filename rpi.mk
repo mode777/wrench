@@ -49,7 +49,7 @@ images.so: $(OBJ_IMAGE)
 	cp $@ ./wren_modules/$@
 
 file.so: $(OBJ_FILE)
-	gcc -o $@ $(OBJ_IMAGE) $(DLLFLAGS)
+	gcc -o $@ $(OBJ_FILE) $(DLLFLAGS)
 	cp $@ ./wren_modules/$@
 
 threads.so: $(OBJ_THREAD)
