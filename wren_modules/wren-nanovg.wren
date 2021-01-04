@@ -1,3 +1,5 @@
+import "images" for Image
+
 class NvgMath {
   static degToRad(deg){ deg/180 * Num.pi }
   static radToDeg(rad){ rad / Num.pi * 180 }
@@ -59,16 +61,16 @@ foreign class NvgGlyphPosition {
 
 foreign class NvgImage{
   construct fromFile(ctx, path){
-    fromFile_(ctx, path)
+    var img = Image.fromFile(path)
+    fromRgba_(ctx, img.width, img.height, img.buffer)
   }
   construct fromBuffer(ctx, mem){
-    fromBuffer_(ctx, mem)
+    var img = Image.fromBuffer(path)
+    fromRgba_(ctx, img.width, img.height, img.buffer)
   }
   construct fromRgba(ctx, w, h, bytes){
     fromRgba_(ctx, w, h, bytes)
   }
-  foreign fromFile_(ctx,path)
-  foreign fromBuffer_(ctx,mem)
   foreign fromRgba_(ctx,w, h, bytes)
   foreign width
   foreign height

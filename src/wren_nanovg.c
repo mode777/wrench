@@ -2,7 +2,6 @@
 #define NANOVG_GLES2_IMPLEMENTATION
 #include "nanovg.h"
 #include "nanovg_gl.h"
-#include "stb_image.h"
 
 #include "wrt_plugin.h"
 
@@ -604,25 +603,25 @@ static void wren_nanovg_NvgImage_delete(void* d){
   // ok
 }
 
-static void wren_nanovg_NvgImage_fromFile__2(WrenVM*vm){
-  WrenImage* handle = (WrenImage*)wrenGetSlotForeign(vm, 0);
-  NVGcontext* ctx =  *(NVGcontext**)wrenGetSlotForeign(vm, 1);
-  const char* filename = wrenGetSlotString(vm, 2);
-  handle->handle = nvgCreateImage(ctx, filename, 0);
-  if(handle->handle == 0){
-    wren_runtime_error(vm, "Image not found or invalid format");
-  }
-}
+// static void wren_nanovg_NvgImage_fromFile__2(WrenVM*vm){
+//   WrenImage* handle = (WrenImage*)wrenGetSlotForeign(vm, 0);
+//   NVGcontext* ctx =  *(NVGcontext**)wrenGetSlotForeign(vm, 1);
+//   const char* filename = wrenGetSlotString(vm, 2);
+//   handle->handle = nvgCreateImage(ctx, filename, 0);
+//   if(handle->handle == 0){
+//     wren_runtime_error(vm, "Image not found or invalid format");
+//   }
+// }
 
-static void wren_nanovg_NvgImage_fromBuffer__2(WrenVM*vm){
-  WrenImage* handle = (WrenImage*)wrenGetSlotForeign(vm, 0);
-  NVGcontext* ctx =  *(NVGcontext**)wrenGetSlotForeign(vm, 1);
-  Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 2);
-  handle->handle = nvgCreateImageMem(ctx, 0, (unsigned char*)buffer->data, buffer->size);
-  if(handle->handle == 0){
-    wren_runtime_error(vm, "Image not found or invalid format");
-  }
-}
+// static void wren_nanovg_NvgImage_fromBuffer__2(WrenVM*vm){
+//   WrenImage* handle = (WrenImage*)wrenGetSlotForeign(vm, 0);
+//   NVGcontext* ctx =  *(NVGcontext**)wrenGetSlotForeign(vm, 1);
+//   Buffer* buffer = (Buffer*)wrenGetSlotForeign(vm, 2);
+//   handle->handle = nvgCreateImageMem(ctx, 0, (unsigned char*)buffer->data, buffer->size);
+//   if(handle->handle == 0){
+//     wren_runtime_error(vm, "Image not found or invalid format");
+//   }
+// }
 
 static void wren_nanovg_NvgImage_fromRgba__4(WrenVM*vm){
   WrenImage* handle = (WrenImage*)wrenGetSlotForeign(vm, 0);
@@ -748,8 +747,8 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("wren-nanovg.NvgGlyphPosition.maxx", wren_nanovg_NvgGlyphPosition_maxx);
 
   wrt_bind_class("wren-nanovg.NvgImage", wren_nanovg_NvgImage_allocate, wren_nanovg_NvgImage_delete);
-  wrt_bind_method("wren-nanovg.NvgImage.fromFile_(_,_)", wren_nanovg_NvgImage_fromFile__2);
-  wrt_bind_method("wren-nanovg.NvgImage.fromBuffer_(_,_)", wren_nanovg_NvgImage_fromBuffer__2);
+  // wrt_bind_method("wren-nanovg.NvgImage.fromFile_(_,_)", wren_nanovg_NvgImage_fromFile__2);
+  // wrt_bind_method("wren-nanovg.NvgImage.fromBuffer_(_,_)", wren_nanovg_NvgImage_fromBuffer__2);
   wrt_bind_method("wren-nanovg.NvgImage.fromRgba_(_,_,_,_)", wren_nanovg_NvgImage_fromRgba__4);
   wrt_bind_method("wren-nanovg.NvgImage.width", wren_nanovg_NvgImage_width);
   wrt_bind_method("wren-nanovg.NvgImage.height", wren_nanovg_NvgImage_height);

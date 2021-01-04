@@ -12,6 +12,7 @@ OBJ_BUFFERS=wren_buffers.o
 OBJ_IMAGE=wren_image.o
 OBJ_THREAD=sdl_thread.o
 OBJ_FILE=file.o
+OBJ_SUPER16=super16.o
 
 INCLUDES_COMMON =-I./wren/src/include -I./wren/src/optional -I./wren/src/vm -I./include -I./include/common -I./nanovg/src -I./msgpack-c/include
 VPATH = ./src ./wren/src/optional ./wren/src/vm ./nanovg/src ./nanovg/example ./msgpack-c/src

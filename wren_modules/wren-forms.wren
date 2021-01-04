@@ -1,3 +1,2 @@
+import "wren-forms/controls" for ControlAttributes, ControlBounds, ControlEvents, ControlLayout, ControlList, ControlRenderer, Control
 import "wren-forms/application" for FormsApplication
-import "wren-forms/controls" for FlowLayout, Button, Label, ResourceCache, DefaultStyles, Form
-

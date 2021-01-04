@@ -4,7 +4,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/linux
 
 DLLFLAGS =-shared -Wl,-no-undefined -L/opt/vc/lib -L/usr/lib/arm-linux-gnueabihf -lm
 
-all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so images.so threads.so buffers.so wren-msgpack.so file.so
+all: wrench wren-sdl.so json.so wren-gles2.so wren-nanovg.so wren-curl.so wren-rapidxml.so wren-msgpack.so images.so threads.so buffers.so wren-msgpack.so file.so super16.so
 
 wrench: $(OBJ) $(OBJ_WREN)
 	gcc -o $@ $(OBJ) $(OBJ_WREN) -ldl -lm
@@ -54,6 +54,10 @@ file.so: $(OBJ_FILE)
 
 threads.so: $(OBJ_THREAD)
 	gcc -o $@ $(OBJ_THREAD) $(DLLFLAGS) -L. -lSDL2
+	cp $@ ./wren_modules/$@
+
+super16.so: $(OBJ_SUPER16)
+	gcc -o $@ $(OBJ_SUPER16) $(DLLFLAGS) -lbrcmGLESv2
 	cp $@ ./wren_modules/$@
 
 %.o: %.c

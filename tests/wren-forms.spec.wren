@@ -1,3 +1,5 @@
 import "./tests/wren-forms/resources.spec"
 import "./tests/wren-forms/utils.spec"
 import "./tests/wren-forms/controls.spec"
+import "./tests/wren-forms/layouts.spec"
+import "./tests/wren-forms/application.spec"

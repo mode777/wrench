@@ -1,7 +1,7 @@
 import "wren-sdl" for SdlApplication, SDL, SdlHint, SdlGlAttribute, SdlGlProfile, SdlWindowFlag, SdlGlContext
 import "wren-gles2" for ClearFlag, GL, EnableCap, BlendFacDst, BlendFacSrc, ErrorCode
 
-class OpenGlApplication is SdlApplication {
+class Gles2Application is SdlApplication {
 
   glContext { _glCtx }
 
@@ -29,10 +29,18 @@ class OpenGlApplication is SdlApplication {
     SDL.setSwapInterval(1)
   }
 
-  draw(){
+  setVsync(v){
+    if(v) {
+      SDL.setSwapInterval(1)
+    } else {
+      SDL.setSwapInterval(0)
+    }
+  }
+
+  checkErrors(){
     var err = GL.getError()
-      if(err != ErrorCode.NO_ERROR){
-        System.print("GL Error:" + err)
+    if(err != ErrorCode.NO_ERROR){
+        Fiber.abort("GL Error:" + ErrorCode.getString(err))
     }
   }
 }

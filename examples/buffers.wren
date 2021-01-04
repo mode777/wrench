@@ -23,3 +23,12 @@ arr[3] = 4
 
 System.print(arr.toList)
 
+var b1 = Buffer.new(8)
+b1.writeInt32(0, 999)
+b1.writeInt32(4, 111)
+var b2 = Buffer.new(16)
+b1.copyTo(b2, 0, 0, 8)
+b1.copyTo(b2, 0, 8, 8)
+System.print(b2.readInt32(12))
+
+

@@ -5,7 +5,7 @@ INCLUDES =$(INCLUDES_COMMON) -I./include/win32
 DLLFLAGS =-shared -Wl,-no-undefined -Wl,--enable-runtime-pseudo-reloc
 
 
-all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll images.dll threads.dll buffers.dll wren-msgpack.dll file.dll
+all: wrench.exe wren-sdl.dll wren-glfw.dll json.dll wren-gles2.dll wren-nanovg.dll wren-curl.dll wren-rapidxml.dll images.dll threads.dll buffers.dll wren-msgpack.dll file.dll super16.dll
 
 test.exe: test.o 
 	gcc -o $@ test.o -L./lib -lcurl
@@ -67,6 +67,13 @@ wren_rapidxml.o: wren_rapidxml.cpp
 file.dll: $(OBJ_FILE)
 	gcc -o $@ $(OBJ_FILE) $(DLLFLAGS)
 	cp $@ ./wren_modules/$@
+
+super16.dll: $(OBJ_SUPER16)
+	gcc -o $@ $(OBJ_SUPER16) $(DLLFLAGS) -L. -l:libGLESv2.lib -L./lib
+	cp $@ ./wren_modules/$@
+
+nanovg.o: nanovg.c
+	gcc -o $@ -c $< -fPIC -g -O0 -Wall $(INCLUDES) -DDEBUG -DNVG_NO_STB
 
 %.o: %.c
 	gcc -o $@ -c $< -fPIC -g -O0 -Wall $(INCLUDES) -DDEBUG

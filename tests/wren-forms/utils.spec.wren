@@ -32,10 +32,10 @@ Augur.describe(ColorUtils){
     var col1 = ColorUtils.parseColor(c1)
     var col2 = ColorUtils.parseColor(c2)
 
-    Assert.equal(col1.r.floor, 0)
-    Assert.equal(col1.g.floor, 136)
-    Assert.equal(col1.b.floor, 255)
-    Assert.equal(col1.a.floor, 255)
-    Assert.equal(col2.a.floor, 136)
+    Assert.equal(col1[0], 0)
+    Assert.equal(col1[1], 136)
+    Assert.equal(col1[2], 255)
+    Assert.equal(col1[3], 255)
+    Assert.equal(col2[3], 136)
   }
 }

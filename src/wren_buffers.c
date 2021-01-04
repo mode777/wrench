@@ -135,6 +135,16 @@ static void buffer_read_bytes_2(WrenVM* vm){
   wrenSetSlotBytes(vm, 0, (const char*)&buffer->data[offset], length);
 }
 
+static void buffer_copy_to_4(WrenVM* vm){
+  Buffer* from = (Buffer*)wrenGetSlotForeign(vm, 0);
+  Buffer* to = (Buffer*)wrenGetSlotForeign(vm, 1);
+  size_t offsetSrc = wrenGetSlotDouble(vm,2);
+  size_t offsetDst = wrenGetSlotDouble(vm,3);
+  size_t length = wrenGetSlotDouble(vm,4);
+  if(offsetSrc+length > from->size || offsetDst+length > to->size) { wren_runtime_error(vm, "Offset out of bounds"); return; }
+  memcpy(&to->data[offsetDst], &from->data[offsetSrc], length);
+}
+
 void wrt_plugin_init(int handle){
   plugin_handle = handle;
   wrt_bind_class("buffers.Buffer", buffer_allocate, buffer_free);
@@ -148,6 +158,7 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("buffers.Buffer.writeBytes(_,_)", buffer_write_bytes_2);
   wrt_bind_method("buffers.Buffer.readString(_)", buffer_read_string_1);
   wrt_bind_method("buffers.Buffer.readBytes(_,_)", buffer_read_bytes_2);
+  wrt_bind_method("buffers.Buffer.copyTo(_,_,_,_)", buffer_copy_to_4);
 
   BUFFER_READ_BIND(Uint8);
   BUFFER_READ_BIND(Uint16);

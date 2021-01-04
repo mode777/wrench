@@ -27,11 +27,12 @@ class MockProvider is ResourceProvider {
 Augur.describe(ResourceCache){
   Augur.it("loads and destroys resources"){
     var provider = MockProvider.new()
-    var cache = ResourceCache.new(provider)
+    var cache = ResourceCache.new()
+    cache.registerProvider("mock", provider)
 
-    cache.acquire("res1")
-    cache.acquire("res2")
-    cache.acquire("res1")
+    cache.acquire("mock","res1")
+    cache.acquire("mock","res2")
+    cache.acquire("mock","res1")
 
     cache.release("res1")
     cache.release("res2")
@@ -43,8 +44,10 @@ Augur.describe(ResourceCache){
 Augur.describe(SharedResource){
   Augur.it("allocates and frees resources"){
     var provider = MockProvider.new()
-    var cache = ResourceCache.new(provider)
-    var shared = SharedResource.new(cache)
+    var cache = ResourceCache.new()
+    cache.registerProvider("mock", provider)
+
+    var shared = SharedResource.new(cache, "mock")
 
     shared.get("a")
     shared.get("a")
@@ -55,8 +58,10 @@ Augur.describe(SharedResource){
 
   Augur.it("frees resources on dispose"){
     var provider = MockProvider.new()
-    var cache = ResourceCache.new(provider)
-    var shared = SharedResource.new(cache)
+    var cache = ResourceCache.new()
+    cache.registerProvider("mock", provider)
+
+    var shared = SharedResource.new(cache, "mock")
 
     shared.get("a")
     shared.get("a")

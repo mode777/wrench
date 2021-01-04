@@ -250,6 +250,12 @@ static void load_plugin(WrenVM* vm, const char * in_name){
 }
 
 static WrenLoadModuleResult load_module_fn(WrenVM* vm, const char* name){
+  WrenLoadModuleResult result = {0};
+
+  if(strcmp(name, "random") == 0 || strcmp(name, "meta") == 0){
+    return result;
+  }
+
   char strbuffer[1024];
   char dllbuffer[1024];
 
@@ -274,7 +280,6 @@ static WrenLoadModuleResult load_module_fn(WrenVM* vm, const char* name){
 
   const char * string = read_file_string(strbuffer);
 
-  WrenLoadModuleResult result = {0};
   //result.onComplete = loadModuleComplete;
   result.source = string;
   return result;

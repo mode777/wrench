@@ -76,6 +76,20 @@ static void wren_sdl_SdlWindow_glSwap_0(WrenVM* vm){
   SDL_GL_SwapWindow(window);
 }
 
+static void wren_sdl_SdlWindow_width(WrenVM* vm){
+  SDL_Window* window = *(SDL_Window**)wrenGetSlotForeign(vm, 0);
+  int w,h;
+  SDL_GetWindowSize(window, &w, &h);
+  wrenSetSlotDouble(vm, 0, w);
+}
+
+static void wren_sdl_SdlWindow_height(WrenVM* vm){
+  SDL_Window* window = *(SDL_Window**)wrenGetSlotForeign(vm, 0);
+  int w,h;
+  SDL_GetWindowSize(window, &w, &h);
+  wrenSetSlotDouble(vm, 0, h);
+}
+
 static void wren_sdl_SdlGlContext_allocate(WrenVM* vm){
   wrenSetSlotNewForeign(vm, 0, 0, sizeof(SDL_GLContext*));
 }
@@ -253,6 +267,8 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("wren-sdl.SdlWindow.create_(_,_,_,_)", wren_sdl_SdlWindow_create_4);
   wrt_bind_method("wren-sdl.SdlWindow.makeCurrent(_)", wren_sdl_SdlWindow_glMakeCurrent_1);
   wrt_bind_method("wren-sdl.SdlWindow.swap()", wren_sdl_SdlWindow_glSwap_0);
+  wrt_bind_method("wren-sdl.SdlWindow.width", wren_sdl_SdlWindow_width);
+  wrt_bind_method("wren-sdl.SdlWindow.height", wren_sdl_SdlWindow_height);
 
   wrt_bind_class("wren-sdl.SdlGlContext", wren_sdl_SdlGlContext_allocate, wren_sdl_SdlGlContext_finalize);
   wrt_bind_method("wren-sdl.SdlGlContext.create_(_)", wren_sdl_SdlGlContext_create_1);

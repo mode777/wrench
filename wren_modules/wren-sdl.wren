@@ -1,6 +1,5 @@
-import "application" for Application
 
-class SdlApplication is Application {
+class SdlApplication {
 
   width { _w }
   height { _h }
@@ -8,7 +7,6 @@ class SdlApplication is Application {
   window { _win }
   
   construct new(){
-    super()
     _event = SdlEvent.new()
     _flags = SdlWindowFlag.Shown|SdlWindowFlag.Resizable
     sdlSetHints()
@@ -17,6 +15,7 @@ class SdlApplication is Application {
   sdlAddWindowFlag(flag){
     _flags = _flags | flag
   }
+
   sdlSetHints(){}
 
   sdlCreateWindow(){
@@ -30,24 +29,12 @@ class SdlApplication is Application {
     sdlCreateWindow()
   }
 
-  handleEvent(event){}
-
-  draw(){}
-
-  update(){
-    super()
-    while(SDL.pollEvent(_event)){
-      if(_event.type == SdlEventType.Quit) {
-        stop()
-      } else {
-        handleEvent(_event)
-      }
-    }
-    if(_win){
-      draw()
-      _win.swap()
-    }
+  poll(){
+    if(SDL.pollEvent(_event)) return _event
+    return null
   }
+
+  swap(){ _win.swap() }
 }
 
 foreign class SdlWindow {
@@ -58,6 +45,8 @@ foreign class SdlWindow {
   foreign create_(width, height, title, hints)
   foreign makeCurrent(glContext)
   foreign swap()
+  foreign width
+  foreign height
 }
 
 foreign class SdlGlContext {

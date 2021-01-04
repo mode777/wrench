@@ -1,15 +1,15 @@
-import "wren-nanovg" for NvgFont, NvgColor, NvgImage
 import "wren-forms/utils" for ColorUtils
 
 class Resource {
 
   id { _id }
   
-  construct new(cache, id, value){
+  construct new(type, cache, id, value){
     _cache = cache
     _id = id
     _value = value
     _refCount = 0
+    _type = type
   }
 
   use(){
@@ -19,7 +19,7 @@ class Resource {
 
   release(){
     _refCount = _refCount-1
-    if(_refCount == 0) _cache.destroy(_id, _value)
+    if(_refCount == 0) _cache.destroy(_type, _id, _value)
   }
   
 }
@@ -30,15 +30,19 @@ class ResourceProvider {
 }
 
 class ResourceCache {
-  construct new(provider){
-    _provider = provider
+  construct new(){
+    _providers = {}
     _resources = {}
   }
 
-  acquire(id){
+  registerProvider(type, provider){
+    _providers[type] = provider
+  }
+
+  acquire(type, id){
     if(!_resources.containsKey(id)){
-      var res = _provider.create(id)
-      _resources[id] = Resource.new(this, id, res)
+      var res = _providers[type].create(id)
+      _resources[id] = Resource.new(type, this, id, res)
     }
     return _resources[id].use()
   }
@@ -48,48 +52,31 @@ class ResourceCache {
     _resources[id].release()    
   }
 
-  destroy(id, value){
+  destroy(type, id, value){
     _resources.remove(id)
-    _provider.destroy(value)
-  }
-}
-
-class FontProvider is ResourceProvider {
-  construct new(ctx){
-    _ctx = ctx
-  }
-  create(id){ NvgFont.fromFile(id) }
-  destroy(font){
-    // TODO: implement
-    //font.dispose()
-  }
-}
-
-class ColorProvider is ResourceProvider {
-  construct new(){}
-  // TODO: Support more paints
-  create(id){ ColorUtils.parseColor(id) }
-}
-
-class ImageProvider is ResourceProvider {
-  create(id){ NvgImage.fromFile(id) }
-  destroy(image){
-    // TODO: implement
-    //image.dispose()
+    _providers[type].destroy(value)
   }
 }
 
 class SharedResource {
   
+  type { _type }
+  type=(v) { _type = type }
+
   construct new(resourceCache){
     _cache = resourceCache
+  }
+
+  construct new(resourceCache, type){
+    _cache = resourceCache
+    _type = type
   }
 
   get(v){
     if(_uri != v){
       if(_uri) _cache.release(_uri)
       _uri = v  
-      _res = _cache.acquire(_uri)
+      _res = _cache.acquire(_type, _uri)
     } 
     return _res
   }

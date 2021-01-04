@@ -1,5 +1,3 @@
-import "wren-nanovg" for NvgColor
-
 class Guard {
   static againstNull(value, name) { 
     if(value == null) Fiber.abort("%(name) is null")
@@ -55,6 +53,6 @@ class ColorUtils {
     var g = (hexToDec(bytes[3])<<4)|hexToDec(bytes[4])
     var b = (hexToDec(bytes[5])<<4)|hexToDec(bytes[6])
     var a = (hexToDec(bytes[7])<<4)|hexToDec(bytes[8])
-    return NvgColor.rgba(r,g,b,a)
+    return [r,g,b,a]
   }
 }

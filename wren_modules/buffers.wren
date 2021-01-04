@@ -12,6 +12,7 @@ foreign class Buffer {
   toBytes(){toBytes(0)}
   foreign size
   offset { 0 }
+  buffer { this }
 
   foreign create_(size)
   foreign dispose()
@@ -38,6 +39,8 @@ foreign class Buffer {
   foreign readDouble(offset)
   foreign readBytes(offset, length)
   foreign readString(offset)
+
+  foreign copyTo(dst, srcOffset, dstOffset, size)
 }
 
 class BufferView {
@@ -98,14 +101,35 @@ class BufferArray is Sequence {
 
   buffer { _buffer }
   size { _buffer.size }
+  offset { _offset }
   count { _buffer.size / _compSize }
   //toList { this.map{|x| t} }
 
   construct new(buffer, componentSize){
+    init_(buffer, componentSize)
+  }
+
+  construct fromBuffer(buffer, componentSize){
+    init_(buffer, componentSize)
+  }
+
+  construct fromList(buffer, componentSize, list){
+    init_(buffer, componentSize)
+    fill(list)
+  }
+
+  init_(buffer, componentSize){
+    _offset = 0
     _buffer = buffer
     _compSize = componentSize
     if(_buffer.size % _compSize != 0){ Fiber.abort("Buffer and typed array are not aligned")}
-  }  
+  }
+
+  fill(arr){
+    for(i in 0...arr.count){
+      this[i] = arr[i]
+    }
+  }
 
   iterate(val) { val == null ? 0 : ( val >= count-1 ? false : val+1)  }
   iteratorValue(i) { getValue(i*_compSize) }
@@ -115,12 +139,15 @@ class BufferArray is Sequence {
 
 class Uint8Array is BufferArray {
   construct new(size){ super(Buffer.new(size*TypeSize.Uint8), TypeSize.Uint8) }
+  construct fromList(list){ super(Buffer.new(list.count*TypeSize.Uint8), TypeSize.Uint8, list) }
   getValue(offset) { buffer.readUint8(offset) }
   setValue(offset, val) { buffer.writeUint8(offset, val) }
 }
 
 class Uint16Array is BufferArray {
   construct new(size){ super(Buffer.new(size*TypeSize.Uint16), TypeSize.Uint16) }
+  construct fromList(list){ super(Buffer.new(list.count*TypeSize.Uint16), TypeSize.Uint16, list) }
+  construct fromBuffer(buffer){ super(buffer, TypeSize.Uint16) }
   getValue(offset) { buffer.readUint16(offset) }
   setValue(offset, val) { buffer.writeUint16(offset, val) }
 }
@@ -151,6 +178,7 @@ class Int32Array is BufferArray {
 
 class FloatArray is BufferArray {
   construct new(size){ super(Buffer.new(size*TypeSize.Float), TypeSize.Float) }
+  construct fromList(list){ super(Buffer.new(list.count*TypeSize.Float), TypeSize.Float, list) }
   getValue(offset) { buffer.readFloat(offset) }
   setValue(offset, val) { buffer.writeFloat(offset, val) }
 }

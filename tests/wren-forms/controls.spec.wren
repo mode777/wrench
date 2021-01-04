@@ -1,8 +1,12 @@
 import "augur" for Augur, Assert
-import "wren-forms/controls2" for Configuration, ControlAttributes, ControlEvents, ControlBounds, Control, ControlLayout, ControlList, WrapLayoutStrategy
+import "wren-forms/controls" for ControlAttributes, ControlEvents, ControlBounds, Control, ControlLayout, ControlList, ControlRenderer
 import "wren-forms/utils" for MapUtils
 import "wren-forms/events" for UiEvent
+import "wren-forms/configuration" for Configuration 
 import "shapes" for Rectangle
+import "wren-forms/layouts" for WrapLayoutStrategy
+import "wren-forms" for DefaultAttributes
+
 
 class MockComponent {
 
@@ -32,11 +36,21 @@ class MockLayoutComponent is MockComponent {
   perform(){ _performed = true }
 }
 
-class MockControl {
-  attributes { _attributes }
-  construct new(attributes){
-    _attributes = attributes
+class MockControl is Control {
+  
+  construct new(components){
+    super()
+    _components = components
   }
+
+  createAttributes(){ _components["attributes"] ? _components["attributes"].call(this) : ControlAttributes.new(this) }
+  createBounds(){ _components["bounds"] ? _components["bounds"].call(this) : ControlBounds.new(this) }
+  createEvents(){ _components["events"] ? _components["events"].call(this) : ControlEvents.new(this) }
+  createRenderer() { _components["renderer"] ? _components["renderer"].call(this) : ControlRenderer.new(this) }
+  createList() { _components["controls"] ? _components["controls"].call(this) : ControlList.new(this) }
+  createLayout() { _components["layout"] ? _components["layout"].call(this) : ControlLayout.new(this) }
+
+  defaultAttributes(){ _components["defaults"] || DefaultAttributes }
 }
 
 Augur.describe(Configuration){
@@ -68,7 +82,7 @@ Augur.describe(Configuration){
 Augur.describe(ControlAttributes){
   
   Augur.it("inherits attributes"){
-    var attr = ControlAttributes.new()
+    var attr = ControlAttributes.new(null)
     attr.setDefaults(MapUtils.mix([{ "a": 1 }, { "b": 2 }]))
     attr["b"] = 3
 
@@ -102,7 +116,8 @@ Augur.describe(ControlAttributes){
 Augur.describe(ControlEvents){
   Augur.it("configures"){
     var ev = ControlEvents.new()
-    var ctrl = Control.new(null, { "render": MockComponent.new(), "events": ev })
+    var ctrl = Control.new({ "render": MockComponent.new(), "events": ev })
+    ctrl.attach(null)
     ctrl.attributes["size"] = [100,100]
     var evMock = UiEvent.new("mousebuttondown", { "x": 0, "y": 0 }) 
 
@@ -118,7 +133,8 @@ Augur.describe(ControlEvents){
 
   Augur.it("adds a handler"){
     var ev = ControlEvents.new()
-    var ctrl = Control.new(null, { "render": MockComponent.new(), "events": ev })
+    var ctrl = Control.new({ "render": MockComponent.new(), "events": ev })
+    ctrl.attach(null)
     ctrl.configure({"attributes": { 
       "size": [50,50],
       "position": [50,50]
@@ -134,7 +150,8 @@ Augur.describe(ControlEvents){
 
   Augur.it("triggers click"){
     var ev = ControlEvents.new()
-    var ctrl = Control.new(null, { "render": MockComponent.new(), "events": ev })
+    var ctrl = Control.new({ "render": MockComponent.new(), "events": ev })
+    ctrl.attach(null)
     ctrl.configure({"attributes": { "size": [50,50] }})
     var ev1 = UiEvent.new("mousebuttondown", { "x": 25, "y": 25 }) 
     var ev2 = UiEvent.new("mousebuttonup", { "x": 25, "y": 25 }) 
@@ -149,7 +166,8 @@ Augur.describe(ControlEvents){
 
   Augur.it("does not trigger click"){
     var ev = ControlEvents.new()
-    var ctrl = Control.new(null, { "render": MockComponent.new(), "events": ev })
+    var ctrl = Control.new({ "render": MockComponent.new(), "events": ev })
+    ctrl.attach(null)
     ctrl.configure({"attributes": { "size": [50,50] }})
     var ev1 = UiEvent.new("mousebuttondown", { "x": 25, "y": 25 }) 
     var ev2 = UiEvent.new("mousebuttonup", { "x": 51, "y": 51 }) 
@@ -164,7 +182,8 @@ Augur.describe(ControlEvents){
 
   Augur.it("does trigger mouseover"){
     var ev = ControlEvents.new()
-    var ctrl = Control.new(null, { "render": MockComponent.new(), "events": ev })
+    var ctrl = Control.new({ "render": MockComponent.new(), "events": ev })
+    ctrl.attach(null)
     ctrl.configure({"attributes": { "size": [50,50] }})
     var ev1 = UiEvent.new("mousemotion", { "x": 25, "y": 25 }) 
     var called = 0
@@ -178,8 +197,9 @@ Augur.describe(ControlEvents){
 
   Augur.it("does trigger mouseout"){
     var ev = ControlEvents.new()
-    var ctrl = Control.new(null, { "render": MockComponent.new(), "events": ev })
+    var ctrl = Control.new({ "render": MockComponent.new(), "events": ev })
     ctrl.configure({"attributes": { "size": [50,50] }})
+    ctrl.attach(null)
     var ev1 = UiEvent.new("mousemotion", { "x": 25, "y": 25 }) 
     var ev2 = UiEvent.new("mousemotion", { "x": 75, "y": 75 }) 
     var called = 0
@@ -192,9 +212,10 @@ Augur.describe(ControlEvents){
   }
 
   Augur.it("bubbles up event"){
-    var parent = Control.new(null, { "render": MockComponent.new(), "events": ControlEvents.new() })
+    var parent = Control.new({ "render": MockComponent.new(), "events": ControlEvents.new() })
+    parent.attach(null)
     parent.configure({"attributes": { "size": [100,100] }})
-    var child = Control.new(null, { "render": MockComponent.new(), "events": ControlEvents.new() })
+    var child = Control.new({ "render": MockComponent.new(), "events": ControlEvents.new() })
     child.configure({"attributes": { "size": [50,50] }})
 
     var received = null
@@ -232,8 +253,9 @@ Augur.describe(ControlBounds){
   }
 
   Augur.it("updates"){
-    var ctrl = Control.new(null, { "render": MockComponent.new() })
+    var ctrl = Control.new({ "render": MockComponent.new() })
     ctrl.attributes["size"] = [100, 100]
+    ctrl.attach(null)
 
     Assert.equal(ctrl.bounds.outer.width, 100)
     Assert.equal(ctrl.bounds.outer.height, 100)
@@ -257,8 +279,9 @@ Augur.describe(ControlLayout){
     var layout = ControlLayout.new()
     var parentMock = MockLayoutComponent.new()
 
-    var parent = Control.new(null, { "render": MockComponent.new(), "layout": parentMock })
-    var ctrl = Control.new(null, { "render": MockComponent.new(), "layout": layout })
+    var parent = Control.new({ "render": MockComponent.new(), "layout": parentMock })
+    parent.attach(null)
+    var ctrl = Control.new({ "render": MockComponent.new(), "layout": layout })
     parent.controls.add(ctrl)
     
     ctrl.attributes["size"] = [100,100]
@@ -268,34 +291,13 @@ Augur.describe(ControlLayout){
 
 }
 
-Augur.describe(WrapLayoutStrategy){
-
-  var controlOfSize = Fn.new { |w,h|
-    var control = Control.new(null, { "render": MockComponent.new() })
-    control.attributes["size"] = [w, h]
-    return control
-  }
-
-  Augur.it("performs"){
-    var c = controlOfSize
-    var list = [c.call(20,30), c.call(10, 10), c.call(10, 40), c.call(40,10)]
-    var inner = Rectangle.new(100,100, 70, 60)
-    var params = { "space-between":  10 }
-
-    WrapLayoutStrategy.perform(list, inner, params)
-
-    Assert.equal(list[0].bounds.box.x, 110)
-    Assert.equal(list[1].bounds.box.x, 140)
-    Assert.equal(list[3].bounds.box.y, 160)
-  }
-}
-
 Augur.describe(ControlList){
   Augur.it("adds control"){
     var list = ControlList.new()
     var layout = MockLayoutComponent.new()
-    var parent = Control.new(null, { "render": MockComponent.new(), "controls": list, "layout": layout })
-    var child = Control.new(null, { "render": MockComponent.new() })
+    var parent = Control.new({ "render": MockComponent.new(), "controls": list, "layout": layout })
+    parent.attach(null)
+    var child = Control.new({ "render": MockComponent.new() })
 
     list.add(child)
     
@@ -310,7 +312,7 @@ Augur.describe(Control){
   Augur.it("configures"){
     var defaults = {}
 
-    var ctrl = Control.new(null, {
+    var ctrl = Control.new({
       "attributes": MockAttributeComponent.new(),
       "defaults": defaults,
       "bounds": MockComponent.new(),
@@ -319,6 +321,7 @@ Augur.describe(Control){
       "layout": MockComponent.new(),
       "events": MockComponent.new()
     })
+    ctrl.attach(null)
 
     ctrl.configure({
       "attributes": {},

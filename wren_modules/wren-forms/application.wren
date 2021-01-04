@@ -1,65 +1,73 @@
-import "nanovg-app" for NanoVgApplication
+import "wren-forms/configuration" for Configuration
+import "wren-forms/resources" for ResourceCache
 import "containers" for Container
-import "application" for Application
-import "wren-nanovg" for NvgContext
 
-import "wren-forms/controls" for FlowLayout, Button, Label, ResourceCache, DefaultStyles
-import "wren-forms/resources" for /*ResourceCache,*/ ImageProvider, FontProvider, ColorProvider
-import "wren-forms/rendering" for Renderer
-import "wren-forms/sdl" for SdlEventFactory
+class FormsApplication {
 
-class FormsApplication is NanoVgApplication {
-
+  static current { __instance }
+  static initSingleton_() { __instance = FormsApplication.new() }
+  static runLoop(form) { 
+    __instance.run(form) 
+    while(!__instance.shouldQuit){
+      __instance.update()
+    }
+  }
+  
   container { _container }
-  imageCache { _imageCache }
-  colorCache { _colorCache }
-  fontCache { _fontCache }
+  resourceCache { _resourceCache }
+  form { _form }
+  eventSource { _eventSource }
+  renderer { _renderer }
+  window { _window }
+  shouldQuit { _quit }
+  isRunning { _running }
 
-  construct new(w, h, name){
-    super()
-    createWindow(w, h, name)
-    _container = Container.new()    
+  construct new(){
+    _container = Container.new()
     compose(_container)
   }
 
   compose(c){
-    c.registerType(FontProvider, [NvgContext])
-    c.registerType(PaintProvider, [NvgContext])
-    c.registerType(ImageProvider, [NvgContext])
-    c.registerType(Renderer, [NvgContext])
-    
-    c.registerType("FontCache", ResourceCache, [FontProvider]).asSingleton
-    c.registerType("ColorCache", ResourceCache, [ColorProvider]).asSingleton
-    c.registerType("ImageCache", ResourceCache, [ImageProvider]).asSingleton
-    c.registerType("EventFactory", SdlEventFactory)
-
-    c.registerInstance(Application, this)
     c.registerInstance(FormsApplication, this)
-    c.registerInstance(NvgContext, nvgContext)
+    c.registerType(ResourceCache)
   }
 
-  handleEvent(sdl){
-    super.handleEvent(sdl)
-    var ev = _eventFactory.create(sdl)
-    _mainForm.captureEvent(ev)
+  run(form){
+    _form = form
+    _form.attach(this)
+    var winFac = resolve("WindowFactory")
+    _window = winFac.createWindow(800,480, "MyApp") 
+    _container.registerInstance("Window", _window)
+    _renderer = resolve("Renderer")
+    _eventSource = resolve("EventSource")
+    _resourceCache = resolve(ResourceCache)
+    _resourceCache.registerProvider("color", resolve("ColorProvider"))
+    _resourceCache.registerProvider("font", resolve("FontProvider"))
+    _resourceCache.registerProvider("image", resolve("ImageProvider"))
+
+    _quit = false
+
+    _form.attributes["size"] = [_window.width, _window.height]
+    _form.layout.perform()
+
+    _running = true
   }
 
-  drawFrame(ctx){
-    super.drawFrame(ctx)
-    _mainForm.paint(ctx)
-  }
+  update(){
+    if(!_running) return
 
-  run(formClass){
-    _fontCache = resolve("FontCache")
-    _imageCache = resolve("ImageCache")
-    _colorCache = resolve("ColorCache")
-
-    _eventFactory = resolve("EventFactory")
-
-    _mainForm = _container.resolve(formClass)
-    _mainForm.init()
-    run()
+    var event = null
+    while(event = _eventSource.poll()){
+      _form.events.capture(event)
+      _quit = _quit || event.type == "quit"
+    }
+    _renderer.beginDraw()
+    _form.renderer.render(_renderer)
+    _renderer.finishDraw()
+    _window.present()
   }
 
   resolve(type){ _container.resolve(type) }
 }
+
+FormsApplication.initSingleton_()
