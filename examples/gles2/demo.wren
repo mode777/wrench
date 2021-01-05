@@ -76,15 +76,18 @@ class MyApp is Gles2Application {
 
   createBuffers(){
     _random = Random.new(1986)
-    _sprBuffer = SpriteBuffer.new(_shaderProgram, 16384) //16384
+    _sprBuffer = SpriteBuffer.new(_shaderProgram, 1024) //16384
+    _count = 512
     for(i in 0..._sprBuffer.count){
-      _sprBuffer.setShape(i, 0, 0, 32, 32, 16, 16)
+      _sprBuffer.setShape(i, 0, 0, 16, 16, 8, 8)
       _sprBuffer.setSource(i, 0,0, 1,1)
       _sprBuffer.setTranslation(i, _random.int(width), _random.int(height))
+      _sprBuffer.setPrio(i, 1+i%4)
     }
     _sprBuffer.update()
 
     _r = 0
+
     // _sprBuffer.setRotation(0, _r)
     // _sprBuffer.setScale(0, 1, 1)
   }
@@ -101,24 +104,23 @@ class MyApp is Gles2Application {
     var location = GL.getUniformLocation(_shaderProgram, "texture")
     GL.uniform1i(location, 0)
     GL.uniform2f(GL.getUniformLocation(_shaderProgram, "size"), width, height)
+    var colorLoc = GL.getUniformLocation(_shaderProgram, "color")
+    var prioLoc = GL.getUniformLocation(_shaderProgram, "prio")
     _sprBuffer.update()
-    _sprBuffer.draw()
+    GL.uniform4f(colorLoc, 1, 0, 1, 1)
+    _sprBuffer.draw(1)
+    GL.uniform4f(colorLoc, 1, 0, 0, 1)
+    _sprBuffer.draw(2)
+    GL.uniform4f(colorLoc, 1, 1, 0, 1)
+    _sprBuffer.draw(3)
+    GL.uniform4f(colorLoc, 0, 1, 0, 1)
+    _sprBuffer.draw(4)
     _r = _r + 0.01
     var clock = System.clock
-    for(i in 0..._sprBuffer.count){
+    for(i in 0..._count){
       _sprBuffer.setRotation(i, _r)
       //_sprBuffer.setScale(i, 1+1-clock%1, 1+1-clock%1)
     }
-    // _vertexAttr.enable()
-    // _scaleRot.enable()
-    // _trans.enable()
-
-    // _sx = _r.sin+1
-    // _sy = _r.cos+1
-    //_sprBuffer.setScale(0, 1+(_r.sin+1)/4, 1+(_r.cos+1)/4)
-
-    //_texcoordAttr.enable()
-    //_indices.draw()
   }
 
   run(){
@@ -134,10 +136,8 @@ class MyApp is Gles2Application {
       swap()
       _frames = _frames+1
       _frameTime = _frameTime + System.clock - _time
-      if(_frames == 100){
-        System.print("Frametime %(_frameTime * 10)ms")
-        _frames = 0
-        _frameTime = 0
+      if(_frames % 100 == 0){
+        System.print("Frametime %((_frameTime / _frames) * 1000)ms")
       }
     }
   }

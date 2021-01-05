@@ -12,8 +12,9 @@ foreign class SpriteBuffer {
   foreign setTranslation(i, x, y)
   foreign setRotation(i, r)
   foreign setScale(i, x, y)
+  foreign setPrio(i, p)
   foreign update()
-  foreign draw()
+  foreign draw(prio)
 }
 
 // class SpriteBuffer {

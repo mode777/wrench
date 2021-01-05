@@ -10,46 +10,38 @@ typedef struct {
   GLshort y;
   GLushort u;
   GLushort v;
-} UvLocAttribute;
-
-typedef struct {
-  UvLocAttribute corners[4];
-} UvLocQuad;
-
-typedef struct {
   GLushort sx;
   GLushort sy;
   GLushort r;
-  GLushort padding;
-  GLushort x;
-  GLushort y;
-} ScaleRotTransAttribute;
+  GLushort prio;
+  GLshort tx;
+  GLshort ty;
+} Attribute;
 
 typedef struct {
-  ScaleRotTransAttribute corners[4];
-} ScaleRotTransQuad;
+  Attribute corners[4];
+} Quad;
 
 typedef struct {
   GLuint count;
   GLuint coordUvLoc;
   GLuint scaleRotLoc;
   GLuint transLoc;
-  GLuint constBuffer;
-  GLuint varBuffer;
+  GLuint prioLoc;
+  GLuint quadBuffer;
   GLuint indexBuffer;
-  UvLocQuad* varAttributes;
-  ScaleRotTransQuad* constAttributes;
+  Quad* quads;
 } SpriteBuffer;
 
 static void init_const_attributes(SpriteBuffer* buffer){
-  ScaleRotTransAttribute defaults = {0};
+  Attribute defaults = {0};
   defaults.sx = 4096;
   defaults.sy = 4096;
   for (size_t i = 0; i < buffer->count; i++)
   {
     for (size_t j = 0; j < 4; j++)
     {
-      buffer->constAttributes[i].corners[j] = defaults;
+      buffer->quads[i].corners[j] = defaults;
     }
   }
 }
@@ -80,20 +72,17 @@ static void sprite_buffer_init(WrenVM* vm){
   buffer->coordUvLoc = glGetAttribLocation(program, "coordUv");
   buffer->scaleRotLoc = glGetAttribLocation(program, "scaleRot");
   buffer->transLoc = glGetAttribLocation(program, "trans");
+  buffer->prioLoc = glGetUniformLocation(program, "prio");
 
-  buffer->constAttributes = calloc(buffer->count, sizeof(ScaleRotTransQuad));
-  buffer->varAttributes = calloc(buffer->count, sizeof(UvLocQuad));
+  buffer->quads = calloc(buffer->count, sizeof(Quad));
 
-  GLuint buffers[3];
-  glGenBuffers(3, buffers);
-  buffer->constBuffer = buffers[0];
-  buffer->varBuffer = buffers[1];
-  buffer->indexBuffer = buffers[2];
+  GLuint buffers[2];
+  glGenBuffers(2, buffers);
+  buffer->quadBuffer = buffers[0];
+  buffer->indexBuffer = buffers[1];
 
-  glBindBuffer(GL_ARRAY_BUFFER, buffer->constBuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(ScaleRotTransQuad)*buffer->count, NULL, GL_STREAM_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, buffer->varBuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(UvLocQuad)*buffer->count, NULL, GL_STREAM_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(Quad)*buffer->count, NULL, GL_STREAM_DRAW);
 
   init_const_attributes(buffer);
   create_indices(buffer);
@@ -101,10 +90,9 @@ static void sprite_buffer_init(WrenVM* vm){
 
 static void sprite_buffer_delete(void* data){
   SpriteBuffer* buffer = (SpriteBuffer*)data;
-  free(buffer->varAttributes);
-  free(buffer->constAttributes);
-  GLuint buffers[3] = { buffer->constBuffer, buffer->varBuffer, buffer->indexBuffer };
-  glDeleteBuffers(3, buffers);
+  free(buffer->quads);
+  GLuint buffers[2] = { buffer->quadBuffer, buffer->indexBuffer };
+  glDeleteBuffers(2, buffers);
 }
 
 static void set_shape(WrenVM* vm){
@@ -116,27 +104,27 @@ static void set_shape(WrenVM* vm){
   GLushort h = wrenGetSlotDouble(vm, 5);
   GLshort ox = wrenGetSlotDouble(vm, 6);
   GLshort oy = wrenGetSlotDouble(vm, 7);
-  buffer->varAttributes[i].corners[0].x = x-ox;
-  buffer->varAttributes[i].corners[0].y = y+h-oy;
+  buffer->quads[i].corners[0].x = x-ox;
+  buffer->quads[i].corners[0].y = y+h-oy;
 
-  buffer->varAttributes[i].corners[1].x = x-ox;
-  buffer->varAttributes[i].corners[1].y = y-oy;
+  buffer->quads[i].corners[1].x = x-ox;
+  buffer->quads[i].corners[1].y = y-oy;
 
-  buffer->varAttributes[i].corners[2].x = x+w-ox;
-  buffer->varAttributes[i].corners[2].y = y-oy;
+  buffer->quads[i].corners[2].x = x+w-ox;
+  buffer->quads[i].corners[2].y = y-oy;
 
-  buffer->varAttributes[i].corners[3].x = x+w-ox;
-  buffer->varAttributes[i].corners[3].y = y+h-oy;
+  buffer->quads[i].corners[3].x = x+w-ox;
+  buffer->quads[i].corners[3].y = y+h-oy;
 
   // printf("(%i, %i), (%i, %i), (%i,%i), (%i,%i)\n", 
-  //   buffer->varAttributes[i].corners[0].x,
-  //   buffer->varAttributes[i].corners[0].y,
-  //   buffer->varAttributes[i].corners[1].x,
-  //   buffer->varAttributes[i].corners[1].y,
-  //   buffer->varAttributes[i].corners[2].x,
-  //   buffer->varAttributes[i].corners[2].y,
-  //   buffer->varAttributes[i].corners[3].x,
-  //   buffer->varAttributes[i].corners[3].y
+  //   buffer->quads[i].corners[0].x,
+  //   buffer->quads[i].corners[0].y,
+  //   buffer->quads[i].corners[1].x,
+  //   buffer->quads[i].corners[1].y,
+  //   buffer->quads[i].corners[2].x,
+  //   buffer->quads[i].corners[2].y,
+  //   buffer->quads[i].corners[3].x,
+  //   buffer->quads[i].corners[3].y
   // );
 }
 
@@ -147,17 +135,17 @@ static void set_source(WrenVM* vm){
   GLushort y = wrenGetSlotDouble(vm, 3);
   GLushort w = wrenGetSlotDouble(vm, 4);
   GLushort h = wrenGetSlotDouble(vm, 5);
-  buffer->varAttributes[i].corners[0].u = y;
-  buffer->varAttributes[i].corners[0].v = x;
+  buffer->quads[i].corners[0].u = y;
+  buffer->quads[i].corners[0].v = x;
 
-  buffer->varAttributes[i].corners[1].u = y+h;
-  buffer->varAttributes[i].corners[1].v = x;
+  buffer->quads[i].corners[1].u = y+h;
+  buffer->quads[i].corners[1].v = x;
 
-  buffer->varAttributes[i].corners[2].u = y+h;
-  buffer->varAttributes[i].corners[2].v = x+w;
+  buffer->quads[i].corners[2].u = y+h;
+  buffer->quads[i].corners[2].v = x+w;
 
-  buffer->varAttributes[i].corners[3].u = y;
-  buffer->varAttributes[i].corners[3].v = x+w;
+  buffer->quads[i].corners[3].u = y;
+  buffer->quads[i].corners[3].v = x+w;
 }
 
 static void set_translation(WrenVM* vm){
@@ -167,8 +155,8 @@ static void set_translation(WrenVM* vm){
   GLushort y = wrenGetSlotDouble(vm, 3);
   for (size_t j = 0; j < 4; j++)
   {
-    buffer->constAttributes[i].corners[j].x = x;
-    buffer->constAttributes[i].corners[j].y = y;
+    buffer->quads[i].corners[j].tx = x;
+    buffer->quads[i].corners[j].ty = y;
   }  
 }
 
@@ -178,7 +166,7 @@ static void set_rotation(WrenVM* vm){
   double r = wrenGetSlotDouble(vm, 2);
   for (size_t j = 0; j < 4; j++)
   {
-    buffer->constAttributes[i].corners[j].r = (GLushort)(r * 10430);
+    buffer->quads[i].corners[j].r = (GLushort)(r * 10430);
   }  
 }
 
@@ -189,28 +177,38 @@ static void set_scale(WrenVM* vm){
   double sy = wrenGetSlotDouble(vm, 3);
   for (size_t j = 0; j < 4; j++)
   {
-    buffer->constAttributes[i].corners[j].sx = (GLushort)(sx * 4096);
-    buffer->constAttributes[i].corners[j].sy = (GLushort)(sy * 4096);
+    buffer->quads[i].corners[j].sx = (GLushort)(sx * 4096);
+    buffer->quads[i].corners[j].sy = (GLushort)(sy * 4096);
   }  
+}
+
+static void set_prio(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  GLushort p = wrenGetSlotDouble(vm, 2);
+  for (size_t j = 0; j < 4; j++)
+  {
+    buffer->quads[i].corners[j].prio = p;
+  }
 }
 
 static void update(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
-  glBindBuffer(GL_ARRAY_BUFFER, buffer->varBuffer);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(UvLocQuad)*buffer->count, (const GLvoid*)buffer->varAttributes);
-  glVertexAttribPointer(buffer->coordUvLoc, 4, GL_SHORT, false, 0, 0);
-  glEnableVertexAttribArray(buffer->coordUvLoc);
 
-  glBindBuffer(GL_ARRAY_BUFFER, buffer->constBuffer);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ScaleRotTransQuad)*buffer->count, (const GLvoid*)buffer->constAttributes);
-  glVertexAttribPointer(buffer->scaleRotLoc, 4, GL_UNSIGNED_SHORT, false, sizeof(ScaleRotTransAttribute), 0);
-  glVertexAttribPointer(buffer->transLoc, 2, GL_SHORT, false, sizeof(ScaleRotTransAttribute), (const GLvoid*)offsetof(ScaleRotTransAttribute, x));
+  glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Quad)*buffer->count, (const GLvoid*)buffer->quads);
+  glVertexAttribPointer(buffer->coordUvLoc, 4, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, x));
+  glVertexAttribPointer(buffer->scaleRotLoc, 4, GL_UNSIGNED_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, sx));
+  glVertexAttribPointer(buffer->transLoc, 2, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, tx));
+  glEnableVertexAttribArray(buffer->coordUvLoc);
   glEnableVertexAttribArray(buffer->scaleRotLoc);
   glEnableVertexAttribArray(buffer->transLoc);
 }
 
 static void draw(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLfloat prio = (GLint)wrenGetSlotDouble(vm, 1);
+  glUniform1f(buffer->prioLoc, prio);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->indexBuffer);
   glDrawElements(GL_TRIANGLES, buffer->count*6, GL_UNSIGNED_SHORT, 0);
 }
@@ -228,8 +226,9 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("super16.SpriteBuffer.setTranslation(_,_,_)", set_translation);
   wrt_bind_method("super16.SpriteBuffer.setRotation(_,_)", set_rotation);
   wrt_bind_method("super16.SpriteBuffer.setScale(_,_,_)", set_scale);
+  wrt_bind_method("super16.SpriteBuffer.setPrio(_,_)", set_prio);
   wrt_bind_method("super16.SpriteBuffer.update()", update);
-  wrt_bind_method("super16.SpriteBuffer.draw()", draw);
+  wrt_bind_method("super16.SpriteBuffer.draw(_)", draw);
   wrt_bind_method("super16.SpriteBuffer.count", count);
 
 }
