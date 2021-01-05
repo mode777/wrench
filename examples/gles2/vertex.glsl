@@ -8,7 +8,7 @@ uniform float prio;
 varying vec2 texcoord;
 
 void main(void) {
-  vec2 uv = coordUv.zw;
+  vec2 uv = coordUv.zw / vec2(256.0,256.0);
   texcoord = uv; 
 
   float r = (scaleRot.z / 10430.0);

@@ -1,12 +1,13 @@
 import "gles2-app" for Gles2Application
 import "wren-sdl" for SdlEventType
-import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat
+import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat, BlendFacSrc, BlendFacDst
 import "buffers" for FloatArray, Uint16Array, Uint8Array, Buffer
 import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices
 import "file" for File
 import "shapes" for Rectangle
 import "random" for Random
 import "super16" for SpriteBuffer
+import "images" for Image
 
 class MyApp is Gles2Application {
   construct new(){
@@ -35,22 +36,23 @@ class MyApp is Gles2Application {
   }
 
   createTexture(){
+    var img = Image.fromFile("assets/character.png")
     _texture = GL.createTexture()
     GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
 
     var level = 0
     var internalFormat = PixelFormat.RGBA
-    var width = 2
-    var height = 2
+    var width = img.width
+    var height = img.height
     var border = 0
     var srcFormat = PixelFormat.RGBA
     var srcType = PixelType.UNSIGNED_BYTE
-    var pixel = Uint8Array.fromList([0, 0, 255, 255, 255, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255])  // opaque blue
     GL.texImage2D(TextureTarget.TEXTURE_2D, level, internalFormat,
-                  width, height, border, srcFormat, srcType, pixel)
-    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, TextureMagFilter.LINEAR)
-    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, TextureMinFilter.LINEAR)
+                  width, height, border, srcFormat, srcType, img.buffer)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, TextureMagFilter.NEAREST)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, TextureMinFilter.NEAREST)
 
+    img.dispose()
     // var image = new Image();
     // image.onload = function() {
     //   GL.bindTexture(gl.TEXTURE_2D, texture);
@@ -79,8 +81,8 @@ class MyApp is Gles2Application {
     _sprBuffer = SpriteBuffer.new(_shaderProgram, 1024) //16384
     _count = 512
     for(i in 0..._sprBuffer.count){
-      _sprBuffer.setShape(i, 0, 0, 16, 16, 8, 8)
-      _sprBuffer.setSource(i, 0,0, 1,1)
+      _sprBuffer.setShape(i, 0, 0, 32, 64, 16, 32)
+      _sprBuffer.setSource(i, 0,0, 16,32)
       _sprBuffer.setTranslation(i, _random.int(width), _random.int(height))
       _sprBuffer.setPrio(i, 1+i%4)
     }
@@ -96,7 +98,8 @@ class MyApp is Gles2Application {
     
     GL.viewport(0,0,width,height)
     GL.clearColor(0.5, 0.5, 0.5, 1.0)
-    GL.enable(EnableCap.DEPTH_TEST)
+    GL.enable(EnableCap.BLEND)
+    GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT | ClearFlag.DEPTH_BUFFER_BIT)
 
     GL.activeTexture(TextureUnit.TEXTURE0)
