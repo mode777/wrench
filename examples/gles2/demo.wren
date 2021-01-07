@@ -8,6 +8,7 @@ import "shapes" for Rectangle
 import "random" for Random
 import "super16" for SpriteBuffer
 import "images" for Image
+import "wren-sdl" for SDL
 
 class MyApp is Gles2Application {
   construct new(){
@@ -119,7 +120,7 @@ class MyApp is Gles2Application {
   run(){
     init()
     while(!_quit){
-      _time = System.clock
+      _time = SDL.ticks
       var ev = null
       while(ev = poll()){
         if(ev.type == SdlEventType.Quit) _quit = true
@@ -128,9 +129,9 @@ class MyApp is Gles2Application {
       checkErrors()
       swap()
       _frames = _frames+1
-      _frameTime = _frameTime + System.clock - _time
+      _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){
-        System.print("Frametime %((_frameTime / _frames) * 1000)ms")
+        System.print("Frametime %((_frameTime / _frames))ms")
       }
     }
   }
