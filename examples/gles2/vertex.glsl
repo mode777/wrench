@@ -1,6 +1,7 @@
 attribute vec4 coordUv;
 attribute vec4 scaleRot;
 attribute vec2 trans;
+uniform mediump vec2 texSize;
 
 uniform vec2 size;
 uniform float prio;
@@ -8,7 +9,7 @@ uniform float prio;
 varying vec2 texcoord;
 
 void main(void) {
-  vec2 uv = coordUv.zw / vec2(256.0,256.0);
+  vec2 uv = coordUv.zw / texSize;
   texcoord = uv; 
 
   float r = (scaleRot.z / 10430.0);

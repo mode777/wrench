@@ -265,7 +265,10 @@ class GL {
   foreign static createTexture(fclass)
   foreign static bindTexture(type, texture)
   static texImage2D(type, level, internalFormat, width, height, border, srcFormat, srcType, buffer) { texImage2D(type, level, internalFormat, width, height, border, srcFormat, srcType, buffer.buffer, buffer.offset, width * height * DataType.bytes(srcType) * PixelFormat.components(srcFormat)) }
+  static texImage2D(type, level, internalFormat, width, height, border, srcFormat, srcType) { texImage2D(type, level, internalFormat, width, height, border, srcFormat, srcType, null, 0, 0) }
   foreign static texImage2D(type, level, internalFormat, width, height, border, srcFormat, srcType, buffer, offset, size)
+  static texSubImage2D(type, level, xoffset, yoffset, width, height, format, dataType, buffer) { texSubImage2D(type, level, xoffset, yoffset, width, height, format, dataType, buffer.buffer, buffer.offset, width * height * DataType.bytes(dataType) * PixelFormat.components(format)) }
+  foreign static texSubImage2D(type, level, xoffset, yoffset, width, height, format, dataType, buffer, offset, size)
   foreign static generateMipmap(type)
   foreign static texParameteri(type, parameterType, parameterValue)
   foreign static activeTexture(texUnit)
