@@ -20,6 +20,7 @@ class MyApp is Gles2Application {
     _frameTime = 0
     _frames = 0
     _time = 0
+    _random = Random.new(1986)
     createWindow(800, 480, "2d Demo")
     setVsync(false)
     compileShaders()
@@ -54,16 +55,17 @@ class MyApp is Gles2Application {
     
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
 
-    var buffer = Uint8Array.new(16*16*4)
-    buffer[0] = 0
-    buffer[1] = 1
-    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 512, 512, 16, 16, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
+    var buffer = Uint8Array.new(32*32*4)
+    for(i in 0...(32*32)){
+      buffer[i*4] = _random.int(32)
+      buffer[i*4+1] = _random.int(32)
+    }
+    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 512, 512, 32, 32, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
 
     img.dispose()
   }
 
   createBuffers(){
-    _random = Random.new(1986)
     _sprBuffer = SpriteBuffer.new(_shaderProgram, 1024) //16384
     // sprites
     for(i in 0..._sprBuffer.count){
@@ -77,8 +79,23 @@ class MyApp is Gles2Application {
     _sprBuffer2 = SpriteBuffer.new(_shaderProgram2, 4) //16384
     _sprBuffer2.setShape(0, 0, 0, width, height, 0, 0)
     _sprBuffer2.setSource(0, 0, 0, 25,15)
-    _sprBuffer2.setPrio(0, 1)
-    _sprBuffer2.setTranslation(0,0,0)
+    _sprBuffer2.setPrio(0, 2)
+    _sprBuffer2.setTranslation(0,-512*32,-512*32)
+
+    _sprBuffer2.setShape(1, 0, 0, width, height, 0, 0)
+    _sprBuffer2.setSource(1, 1, 0, 25,15)
+    _sprBuffer2.setPrio(1, 4)
+    _sprBuffer2.setTranslation(1,-513*32,-512*32)
+
+    _sprBuffer2.setShape(2, 0, 0, width, height, 0, 0)
+    _sprBuffer2.setSource(2, 1, 0, 25,15)
+    _sprBuffer2.setPrio(2, 6)
+    _sprBuffer2.setTranslation(2,-513*32,-513*32)
+
+    _sprBuffer2.setShape(3, 0, 0, width, height, 0, 0)
+    _sprBuffer2.setSource(3, 1, 0, 25,15)
+    _sprBuffer2.setPrio(3, 8)
+    _sprBuffer2.setTranslation(3,-512*32,-513*32)
 
     _r = 0
     _x = -512*32
@@ -111,23 +128,23 @@ class MyApp is Gles2Application {
     _sprBuffer2.update()
     _sprBuffer.update()
 
-    _sprBuffer2.draw(1)
-    _sprBuffer2.draw(1)
+    _sprBuffer2.draw(2)
+    _sprBuffer2.draw(3)
     
     _sprBuffer.draw(1)
 
-    _sprBuffer2.draw(1)
-    _sprBuffer2.draw(1)
+    _sprBuffer2.draw(4)
+    _sprBuffer2.draw(5)
     
     _sprBuffer.draw(2)
     //GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
-    _sprBuffer2.draw(1)
-    _sprBuffer2.draw(1)
+    _sprBuffer2.draw(6)
+    _sprBuffer2.draw(7)
     // GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 1)
     _sprBuffer.draw(3)
 
-    _sprBuffer2.draw(1)
-    _sprBuffer2.draw(1)
+    _sprBuffer2.draw(8)
+    _sprBuffer2.draw(9)
     
     _sprBuffer.draw(4)
     
@@ -139,7 +156,7 @@ class MyApp is Gles2Application {
     // _sprBuffer.setScale(0, s, s)
     // _x = _x - 2
     // _y = _y - 2
-    _sprBuffer2.setTranslation(0, _x, _y)
+    //_sprBuffer2.setTranslation(0, _x, _y)
   }
 
   run(){
