@@ -29,10 +29,10 @@ class MyApp is Gles2Application {
 
 
   compileShaders(){
-    //var vertCode = File.read("./examples/gles2/vertex.glsl")
-    var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
-    //var fragCode = File.read("./examples/gles2/fragment.glsl")
-    var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
+    var vertCode = File.read("./examples/gles2/vertex.glsl")
+    //var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
+    var fragCode = File.read("./examples/gles2/fragment.glsl")
+    //var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
 
     _shaderProgram = Gles2Util.compileShader(vertCode, fragCode)
   }
@@ -60,7 +60,7 @@ class MyApp is Gles2Application {
 
   createBuffers(){
     _random = Random.new(1986)
-    _sprBuffer = SpriteBuffer.new(_shaderProgram, 1) //16384
+    _sprBuffer = SpriteBuffer.new(_shaderProgram, 1024) //16384
 
     // tile layer 0
     _sprBuffer.setShape(0, 0, 0, width, height, 0, 0)
@@ -69,7 +69,7 @@ class MyApp is Gles2Application {
     _sprBuffer.setTranslation(0,0,0)
 
     // sprites
-    for(i in 1..._sprBuffer.count){
+    for(i in 0..._sprBuffer.count){
       _sprBuffer.setShape(i, 0, 0, 32, 32, 16, 16)
       _sprBuffer.setSource(i, 16, 0, 16, 16)
       _sprBuffer.setPrio(i, i%4)
@@ -98,13 +98,13 @@ class MyApp is Gles2Application {
     GL.uniform2f(GL.getUniformLocation(_shaderProgram, "size"), width, height)
     GL.uniform2f(GL.getUniformLocation(_shaderProgram, "texSize"), _texSize[0], _texSize[1])
     _sprBuffer.update()
-    GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
+    //GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
     _sprBuffer.draw(1)
     // GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 1)
-    // _sprBuffer.draw(1)
-    // _sprBuffer.draw(2)
-    // _sprBuffer.draw(3)
-    // _sprBuffer.draw(4)
+    _sprBuffer.draw(1)
+    _sprBuffer.draw(2)
+    _sprBuffer.draw(3)
+    _sprBuffer.draw(4)
     
     _r = _r + 0.01
     for(i in 0..._sprBuffer.count){
