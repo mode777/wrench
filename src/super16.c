@@ -151,8 +151,8 @@ static void set_source(WrenVM* vm){
 static void set_translation(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
   GLuint i = wrenGetSlotDouble(vm, 1);
-  GLushort x = wrenGetSlotDouble(vm, 2);
-  GLushort y = wrenGetSlotDouble(vm, 3);
+  GLshort x = wrenGetSlotDouble(vm, 2);
+  GLshort y = wrenGetSlotDouble(vm, 3);
   for (size_t j = 0; j < 4; j++)
   {
     buffer->quads[i].corners[j].tx = x;
