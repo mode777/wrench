@@ -106,7 +106,9 @@ class MyApp is Gles2Application {
     _sprBuffer.draw(4)
     
     _r = _r + 0.01
-    // _sprBuffer.setRotation(0, _r)
+    for(i in 0..._sprBuffer.count){
+      _sprBuffer.setRotation(i, _r)
+    }
     // var s = (System.clock.sin*2) + 3
     // _sprBuffer.setScale(0, s, s)
     // _x = _x - 2
