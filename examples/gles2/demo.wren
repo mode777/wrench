@@ -56,10 +56,6 @@ class MyApp is Gles2Application {
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 512, 512, 16, 16, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
 
     img.dispose()
-
-    GL.activeTexture(TextureUnit.TEXTURE0)
-    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
-    GL.uniform1i(GL.getUniformLocation(_shaderProgram, "texture"), 0)
   }
 
   createBuffers(){
@@ -95,6 +91,9 @@ class MyApp is Gles2Application {
     GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT)
 
+    GL.activeTexture(TextureUnit.TEXTURE0)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
+    GL.uniform1i(GL.getUniformLocation(_shaderProgram, "texture"), 0)
 
 
     GL.uniform2f(GL.getUniformLocation(_shaderProgram, "size"), width, height)

@@ -30,6 +30,7 @@ typedef struct {
   GLuint prioLoc;
   GLuint quadBuffer;
   GLuint indexBuffer;
+  GLuint program;
   Quad* quads;
 } SpriteBuffer;
 
@@ -68,6 +69,7 @@ static void sprite_buffer_init(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(SpriteBuffer));
   GLuint program = *(GLuint*)wrenGetSlotForeign(vm, 1);
 
+  buffer->program = program;
   buffer->count = wrenGetSlotDouble(vm, 2);
   buffer->coordUvLoc = glGetAttribLocation(program, "coordUv");
   buffer->scaleRotLoc = glGetAttribLocation(program, "scaleRot");
@@ -194,20 +196,22 @@ static void set_prio(WrenVM* vm){
 
 static void update(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
-
   glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
   glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Quad)*buffer->count, (const GLvoid*)buffer->quads);
+}
+
+static void draw(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLfloat prio = (GLint)wrenGetSlotDouble(vm, 1);
+
+  glUseProgram(buffer->program);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
   glVertexAttribPointer(buffer->coordUvLoc, 4, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, x));
   glVertexAttribPointer(buffer->scaleRotLoc, 4, GL_UNSIGNED_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, sx));
   glVertexAttribPointer(buffer->transLoc, 2, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, tx));
   glEnableVertexAttribArray(buffer->coordUvLoc);
   glEnableVertexAttribArray(buffer->scaleRotLoc);
   glEnableVertexAttribArray(buffer->transLoc);
-}
-
-static void draw(WrenVM* vm){
-  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
-  GLfloat prio = (GLint)wrenGetSlotDouble(vm, 1);
   glUniform1f(buffer->prioLoc, prio);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->indexBuffer);
   glDrawElements(GL_TRIANGLES, buffer->count*6, GL_UNSIGNED_SHORT, 0);
