@@ -65,13 +65,6 @@ class MyApp is Gles2Application {
   createBuffers(){
     _random = Random.new(1986)
     _sprBuffer = SpriteBuffer.new(_shaderProgram, 1024) //16384
-
-    // tile layer 0
-    _sprBuffer.setShape(0, 0, 0, width, height, 0, 0)
-    _sprBuffer.setSource(0, 0, 0, 25,15)
-    _sprBuffer.setPrio(0, 1)
-    _sprBuffer.setTranslation(0,0,0)
-
     // sprites
     for(i in 0..._sprBuffer.count){
       _sprBuffer.setShape(i, 0, 0, 32, 32, 16, 16)
@@ -80,7 +73,12 @@ class MyApp is Gles2Application {
       _sprBuffer.setTranslation(i,_random.int(width),_random.int(height))
     }
 
-    _sprBuffer.update()
+    // tile layer 0
+    _sprBuffer2 = SpriteBuffer.new(_shaderProgram2, 4) //16384
+    _sprBuffer2.setShape(0, 0, 0, width, height, 0, 0)
+    _sprBuffer2.setSource(0, 0, 0, 25,15)
+    _sprBuffer2.setPrio(0, 1)
+    _sprBuffer2.setTranslation(0,0,0)
 
     _r = 0
     _x = -512*32
@@ -110,7 +108,8 @@ class MyApp is Gles2Application {
     GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT)
 
-
+    _sprBuffer2.update()
+    _sprBuffer2.draw(1)
 
     _sprBuffer.update()
     //GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
@@ -129,7 +128,7 @@ class MyApp is Gles2Application {
     // _sprBuffer.setScale(0, s, s)
     // _x = _x - 2
     // _y = _y - 2
-    _sprBuffer.setTranslation(0, _x, _y)
+    _sprBuffer2.setTranslation(0, _x, _y)
   }
 
   run(){
