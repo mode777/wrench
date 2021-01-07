@@ -13,5 +13,7 @@ void main(void) {
     mediump vec2 offset = fract(texcoord);
 
     gl_FragColor = texture2D(texture, (coordinates + offset) / oneTile);
+  } else {
+    gl_FragColor = texture2D(texture, texcoord);
   }
 }
