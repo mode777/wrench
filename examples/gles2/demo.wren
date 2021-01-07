@@ -25,16 +25,20 @@ class MyApp is Gles2Application {
     compileShaders()
     createTexture()
     createBuffers()
+    initDraw()
   }
 
 
   compileShaders(){
-    var vertCode = File.read("./examples/gles2/vertex.glsl")
-    //var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
     var fragCode = File.read("./examples/gles2/fragment.glsl")
-    //var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
+    var vertCode = File.read("./examples/gles2/vertex.glsl")
 
     _shaderProgram = Gles2Util.compileShader(vertCode, fragCode)
+    
+    fragCode = File.read("./examples/gles2/fragment_tile.glsl")
+    vertCode = File.read("./examples/gles2/vertex_tile.glsl")
+    
+    _shaderProgram2 = Gles2Util.compileShader(vertCode, fragCode)
   }
 
   createTexture(){
@@ -83,21 +87,31 @@ class MyApp is Gles2Application {
     _y = -512*32
   }
 
-  render(){
+  initDraw(){
+    GL.activeTexture(TextureUnit.TEXTURE0)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
+
     GL.useProgram(_shaderProgram)
+    GL.uniform2f(GL.getUniformLocation(_shaderProgram, "size"), width, height)
+    GL.uniform2f(GL.getUniformLocation(_shaderProgram, "texSize"), _texSize[0], _texSize[1])
+    GL.uniform1i(GL.getUniformLocation(_shaderProgram, "texture"), 0)
+
+    GL.useProgram(_shaderProgram2)
+    GL.uniform2f(GL.getUniformLocation(_shaderProgram2, "size"), width, height)
+    GL.uniform2f(GL.getUniformLocation(_shaderProgram2, "texSize"), _texSize[0], _texSize[1])
+    GL.uniform1i(GL.getUniformLocation(_shaderProgram2, "texture"), 0)
+
+  }
+
+  render(){
     GL.viewport(0,0,width,height)
     GL.clearColor(0.5, 0.5, 0.5, 1.0)
     GL.enable(EnableCap.BLEND)
     GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT)
 
-    GL.activeTexture(TextureUnit.TEXTURE0)
-    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
-    GL.uniform1i(GL.getUniformLocation(_shaderProgram, "texture"), 0)
 
 
-    GL.uniform2f(GL.getUniformLocation(_shaderProgram, "size"), width, height)
-    GL.uniform2f(GL.getUniformLocation(_shaderProgram, "texSize"), _texSize[0], _texSize[1])
     _sprBuffer.update()
     //GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
     _sprBuffer.draw(1)
