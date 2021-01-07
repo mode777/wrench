@@ -21,7 +21,7 @@ class MyApp is Gles2Application {
     _frames = 0
     _time = 0
     createWindow(800, 480, "2d Demo")
-    setVsync(false)
+    setVsync(true)
     compileShaders()
     createTexture()
     createBuffers()
@@ -120,7 +120,7 @@ class MyApp is Gles2Application {
     _sprBuffer.draw(3)
     _sprBuffer.draw(4)
     
-    _r = _r + 0.01
+    _r = _r + 0.5
     for(i in 0..._sprBuffer.count){
       _sprBuffer.setRotation(i, _r)
     }
