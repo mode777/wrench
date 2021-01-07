@@ -60,7 +60,7 @@ class MyApp is Gles2Application {
 
   createBuffers(){
     _random = Random.new(1986)
-    _sprBuffer = SpriteBuffer.new(_shaderProgram, 1024) //16384
+    _sprBuffer = SpriteBuffer.new(_shaderProgram, 1) //16384
 
     // tile layer 0
     _sprBuffer.setShape(0, 0, 0, width, height, 0, 0)
@@ -100,11 +100,11 @@ class MyApp is Gles2Application {
     _sprBuffer.update()
     GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
     _sprBuffer.draw(1)
-    GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 1)
-    _sprBuffer.draw(1)
-    _sprBuffer.draw(2)
-    _sprBuffer.draw(3)
-    _sprBuffer.draw(4)
+    // GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 1)
+    // _sprBuffer.draw(1)
+    // _sprBuffer.draw(2)
+    // _sprBuffer.draw(3)
+    // _sprBuffer.draw(4)
     
     _r = _r + 0.01
     for(i in 0..._sprBuffer.count){
