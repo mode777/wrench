@@ -129,21 +129,21 @@ class MyApp is Gles2Application {
     _sprBuffer.update()
 
     _sprBuffer2.draw(2)
-    _sprBuffer2.draw(3)
+    _sprBuffer2.draw(4)
     
     _sprBuffer.draw(1)
 
-    _sprBuffer2.draw(4)
+    _sprBuffer2.draw(3)
     _sprBuffer2.draw(5)
     
     _sprBuffer.draw(2)
     //GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
     _sprBuffer2.draw(6)
-    _sprBuffer2.draw(7)
+    _sprBuffer2.draw(8)
     // GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 1)
     _sprBuffer.draw(3)
 
-    _sprBuffer2.draw(8)
+    _sprBuffer2.draw(7)
     _sprBuffer2.draw(9)
     
     _sprBuffer.draw(4)
