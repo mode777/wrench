@@ -18,6 +18,5 @@ void main(void) {
   highp vec2 oneTile = (texSize / tilesize);
   
   highp vec2 offset = fract(texcoord);
-  highp vec4 pixel = texture2D(texture, (tile.xy + offset) / oneTile);  
-  gl_FragColor = pixel;
+  gl_FragColor = texture2D(texture, (tile.xy + offset) / oneTile);
 }
