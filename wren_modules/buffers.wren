@@ -140,6 +140,7 @@ class BufferArray is Sequence {
 class Uint8Array is BufferArray {
   construct new(size){ super(Buffer.new(size*TypeSize.Uint8), TypeSize.Uint8) }
   construct fromList(list){ super(Buffer.new(list.count*TypeSize.Uint8), TypeSize.Uint8, list) }
+  construct fromBuffer(buffer){ super(buffer, TypeSize.Uint8) }
   getValue(offset) { buffer.readUint8(offset) }
   setValue(offset, val) { buffer.writeUint8(offset, val) }
 }

@@ -26,7 +26,7 @@ class Gfx {
 
     var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
     var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
-    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "offset", "map"])
+    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "offset", "map", "mapSize"])
 
     fragCode = File.read("./examples/gles2/fragment.glsl")
     vertCode = File.read("./examples/gles2/vertex.glsl")
@@ -43,7 +43,6 @@ class Gfx {
     __bg2 = BgLayer.new(2, 6)
     __bg3 = BgLayer.new(3, 8)
 
-
     __texSize = [1024, 1024]
     __texture = Gles2Util.createTexture(__texSize[0], __texSize[1])
     
@@ -52,20 +51,40 @@ class Gfx {
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
     img.dispose()
 
-    __map = Gles2Util.createTexture(128,128)
+    __map0 = TileMap.new(128,128)
+    __map1 = TileMap.new(128,128)
+    __map2 = TileMap.new(128,128)
+    __map3 = TileMap.new(128,128)
 
-    var random = Random.new(1986)
-    var buffer = Uint8Array.new(32*32*4)
-    for(i in 0...(32*32)){
-      buffer[i*4] = 32 - i % 32
-      buffer[i*4+1] = i / 32
-      buffer[i*4+2] = i % 2
+    var maps = [__map0, __map1, __map2, __map3]
+
+    for(m in maps){
+      for(y in 0...32){
+        for(x in 0...32){
+          m.tile(x,y,x,y)
+          m.prio(x,y, x%2 == 0 ? true : false)
+        }
+      }
     }
-    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, 32, 32, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
+
+    // __map = Gles2Util.createTexture(128,128)
+
+    // var random = Random.new(1986)
+    // var buffer = Uint8Array.new(32*32*4)
+    // for(i in 0...(32*32)){
+    //   buffer[i*4] = 32 - i % 32
+    //   buffer[i*4+1] = i / 32
+    //   buffer[i*4+2] = i % 2
+    // }
+    // GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, 32, 32, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
 
   }
 
   static update(){
+    __map0.update()
+    __map1.update()
+    __map2.update()
+    __map3.update()
     __layerBuffer.update()
     __spriteBuffer.update()
   }
@@ -80,9 +99,6 @@ class Gfx {
     GL.activeTexture(TextureUnit.TEXTURE0)
     GL.bindTexture(TextureTarget.TEXTURE_2D, __texture)
 
-    GL.activeTexture(TextureUnit.TEXTURE1)
-    GL.bindTexture(TextureTarget.TEXTURE_2D, __map)
-
     __spriteShader.use()
     GL.uniform2f(__spriteShader.locations["size"], __width, __height)
     GL.uniform2f(__spriteShader.locations["texSize"], __texSize[0], __texSize[1])
@@ -96,34 +112,74 @@ class Gfx {
     GL.uniform2f(__layerShader.locations["tilesize"], 16, 16)
     GL.uniform1i(__layerShader.locations["texture"], 0)
     GL.uniform1i(__layerShader.locations["map"], 1)
+    GL.uniform2f(__layerShader.locations["mapSize"], 128, 128)
 
     __layerShader.use()
+    __map0.use()
     __bg0.draw(false)
+    __map1.use()
     __bg1.draw(false)
 
     __spriteShader.use()
     __spriteBuffer.draw(1)
 
     __layerShader.use()
+    __map0.use()
     __bg0.draw(true)
+    __map1.use()
     __bg1.draw(true)
     
     __spriteShader.use()
     __spriteBuffer.draw(2)
     
     __layerShader.use()
+    __map2.use()
     __bg2.draw(false)
+    __map3.use()
     __bg3.draw(false)
     
     __spriteShader.use()
     __spriteBuffer.draw(3)
     
     __layerShader.use()
+    __map2.use()
     __bg2.draw(true)
+    __map3.use()
     __bg3.draw(true)
 
     __spriteShader.use()
     __spriteBuffer.draw(4)
+  }
+}
+
+class TileMap {
+  construct new(w,h){
+    _w = w
+    _h = h
+    _buffer = Buffer.new(w*h*4)
+    _uint16 = Uint16Array.fromBuffer(_buffer)
+    _uint8 = Uint8Array.fromBuffer(_buffer)
+    _texture = Gles2Util.createTexture(w,h)
+  }
+
+  tile(x,y, sx, sy){
+    var offset = (y*_w+x)*4
+    _uint8[offset] = sx
+    _uint8[offset+1] = sy
+  }
+
+  prio(x,y, isPrio){
+    _uint8[(y*_w+x)*4+2] = isPrio ? 1 : 0
+  }
+
+  update(){
+    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
+    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, _w, _h, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, _buffer)
+  }
+
+  use(){
+    GL.activeTexture(TextureUnit.TEXTURE1)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
   }
 }
 
