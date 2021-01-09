@@ -25,7 +25,7 @@ class MyApp is Gles2Application {
     _spritesEnb = true
     _pixelscale = 2
     createWindow(800, 480, "2d Demo")
-    setVsync(false)
+    setVsync(true)
     Gfx.init()
 
     subscribe(SdlEventType.Keyup){|ev|
