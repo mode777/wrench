@@ -43,6 +43,7 @@ class Gfx {
     __bg1 = BgLayer.new(128,128, 1, 4)
     __bg2 = BgLayer.new(128,128, 2, 6)
     __bg3 = BgLayer.new(128,128, 3, 8)
+    __layers = [__bg0, __bg1, __bg2, __bg3]
 
     __texSize = [1024, 1024]
     __texture = Gles2Util.createTexture(__texSize[0], __texSize[1])
@@ -51,17 +52,6 @@ class Gfx {
     var img = Image.fromFile("assets/vram.png")
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
     img.dispose()
-
-    __layers = [__bg0, __bg1, __bg2, __bg3]
-
-    for(m in __layers){
-      for(y in 0...32){
-        for(x in 0...32){
-          m.tile(x,y,x,y)
-          m.prio(x,y, x%2 == 0 ? true : false)
-        }
-      }
-    }
   }
 
   static update(){

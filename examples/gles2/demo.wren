@@ -43,6 +43,15 @@ class MyApp is Gles2Application {
       s.prio = 1+_random.int(4)
       s.pos(_random.int(width/2),_random.int(height/2))
     }
+
+    for(m in Gfx.layers){
+      for(y in 0...32){
+        for(x in 0...32){
+          m.tile(x,y,x,y)
+          m.prio(x,y, x%2 == 0 ? true : false)
+        }
+      }
+    }
   }
 
   render(){
