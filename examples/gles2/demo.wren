@@ -1,14 +1,13 @@
 import "gles2-app" for Gles2Application
-import "wren-sdl" for SdlEventType
+import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
 import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat, BlendFacSrc, BlendFacDst
 import "buffers" for FloatArray, Uint16Array, Uint8Array, Buffer
 import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices
 import "file" for File
 import "shapes" for Rectangle
 import "random" for Random
-import "super16" for SpriteBuffer
+import "super16" for SpriteBuffer, BgLayer, Gfx
 import "images" for Image
-import "wren-sdl" for SDL
 
 class MyApp is Gles2Application {
   construct new(){
@@ -20,31 +19,47 @@ class MyApp is Gles2Application {
     _frameTime = 0
     _frames = 0
     _time = 0
+    _r = 0
     _random = Random.new(1986)
+    _layersEnb = [true, true, true, true]
+    _spritesEnb = true
+    _pixelscale = 2
     createWindow(800, 480, "2d Demo")
     setVsync(false)
-    compileShaders()
-    createTexture()
-    createBuffers()
-    initDraw()
+    //compileShaders()
+    //createTexture()
+    //createBuffers()
+    Gfx.init()
+
+    subscribe(SdlEventType.Keyup){|ev|
+      if(ev.key_sym == SdlKeyCode.Num1) Gfx.pixelScale = 1//_layersEnb[0] = !_layersEnb[0]
+      if(ev.key_sym == SdlKeyCode.Num2) Gfx.pixelScale = 2//_layersEnb[1] = !_layersEnb[1]
+      if(ev.key_sym == SdlKeyCode.Num3) Gfx.pixelScale = 3//_layersEnb[2] = !_layersEnb[2]
+      if(ev.key_sym == SdlKeyCode.Num4) Gfx.pixelScale = 4//_layersEnb[3] = !_layersEnb[3]
+      if(ev.key_sym == SdlKeyCode.Num5) _spritesEnb = !_spritesEnb
+    }
+
+    for(s in Gfx.sprites){
+      s.set(16, 16, 16, 0)
+      s.prio = 1+_random.int(3)
+      s.pos(_random.int(width/2),_random.int(height/2))
+    }
   }
 
-
   compileShaders(){
-    var fragCode = File.read("./examples/gles2/fragment.glsl")
-    var vertCode = File.read("./examples/gles2/vertex.glsl")
 
-    _shaderProgram = Gles2Util.compileShader(vertCode, fragCode)
+    Gfx.init()
     
-    fragCode = File.read("./examples/gles2/fragment_tile.glsl")
-    vertCode = File.read("./examples/gles2/vertex_tile.glsl")
+    // fragCode = File.read("./examples/gles2/fragment_tile.glsl")
+    // vertCode = File.read("./examples/gles2/vertex_tile.glsl")
     
-    _shaderProgram2 = Gles2Util.compileShader(vertCode, fragCode)
+    // _layerShaders = Gles2Util.compileShader(vertCode, fragCode)
   }
 
   createTexture(){
     //var img = Image.fromFile("assets/character.png")
-    var img = Image.fromFile("assets/overworld.png")
+    //var img = Image.fromFile("assets/vram.png")
+    var img = Image.fromFile("assets/vram.png")
     _texture = GL.createTexture()
     GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
 
@@ -53,6 +68,7 @@ class MyApp is Gles2Application {
     GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, TextureMagFilter.NEAREST)
     GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, TextureMinFilter.NEAREST)
     
+    // load image to vram
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
 
     var buffer = Uint8Array.new(32*32*4)
@@ -66,97 +82,63 @@ class MyApp is Gles2Application {
   }
 
   createBuffers(){
-    _sprBuffer = SpriteBuffer.new(_shaderProgram, 1024) //16384
+    _sprites = SpriteBuffer.new(Gfx.spriteShader.program, 1024) //16384
     // sprites
-    for(i in 0..._sprBuffer.count){
-      _sprBuffer.setShape(i, 0, 0, 32, 32, 16, 16)
-      _sprBuffer.setSource(i, 16, 0, 16, 16)
-      _sprBuffer.setPrio(i, 1+i%4)
-      _sprBuffer.setTranslation(i,_random.int(width),_random.int(height))
+    for(i in 0..._sprites.count){
+      _sprites.setShape(i, 0, 0, 16, 16, 8, 8)
+      _sprites.setSource(i, 16, 0, 16, 16)
+      _sprites.setPrio(i, 1+i%4)
+      _sprites.setTranslation(i,_random.int(width/2),_random.int(height/2))
     }
 
-    // tile layer 0
-    _sprBuffer2 = SpriteBuffer.new(_shaderProgram2, 4) //16384
-    _sprBuffer2.setShape(0, 0, 0, width, height, 0, 0)
-    _sprBuffer2.setSource(0, 0, 0, 25,15)
-    _sprBuffer2.setPrio(0, 2)
-    _sprBuffer2.setTranslation(0,-512*32,-512*32)
-
-    _sprBuffer2.setShape(1, 0, 0, width, height, 0, 0)
-    _sprBuffer2.setSource(1, 1, 0, 25,15)
-    _sprBuffer2.setPrio(1, 4)
-    _sprBuffer2.setTranslation(1,-513*32,-512*32)
-
-    _sprBuffer2.setShape(2, 0, 0, width, height, 0, 0)
-    _sprBuffer2.setSource(2, 1, 0, 25,15)
-    _sprBuffer2.setPrio(2, 6)
-    _sprBuffer2.setTranslation(2,-513*32,-513*32)
-
-    _sprBuffer2.setShape(3, 0, 0, width, height, 0, 0)
-    _sprBuffer2.setSource(3, 1, 0, 25,15)
-    _sprBuffer2.setPrio(3, 8)
-    _sprBuffer2.setTranslation(3,-512*32,-513*32)
-
-    _r = 0
-    _x = -512*32
-    _y = -512*32
   }
 
   initDraw(){
-    GL.activeTexture(TextureUnit.TEXTURE0)
-    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
-
-    GL.useProgram(_shaderProgram)
-    GL.uniform2f(GL.getUniformLocation(_shaderProgram, "size"), width, height)
-    GL.uniform2f(GL.getUniformLocation(_shaderProgram, "texSize"), _texSize[0], _texSize[1])
-    GL.uniform1i(GL.getUniformLocation(_shaderProgram, "texture"), 0)
-
-    GL.useProgram(_shaderProgram2)
-    GL.uniform2f(GL.getUniformLocation(_shaderProgram2, "size"), width, height)
-    GL.uniform2f(GL.getUniformLocation(_shaderProgram2, "texSize"), _texSize[0], _texSize[1])
-    GL.uniform1i(GL.getUniformLocation(_shaderProgram2, "texture"), 0)
-
-  }
-
-  render(){
     GL.viewport(0,0,width,height)
     GL.clearColor(0.5, 0.5, 0.5, 1.0)
     GL.enable(EnableCap.BLEND)
     GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT)
-
-    _sprBuffer2.update()
-    _sprBuffer.update()
-
-    _sprBuffer2.draw(2)
-    _sprBuffer2.draw(4)
     
-    _sprBuffer.draw(1)
+    GL.activeTexture(TextureUnit.TEXTURE0)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
 
-    _sprBuffer2.draw(3)
-    _sprBuffer2.draw(5)
-    
-    _sprBuffer.draw(2)
-    //GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 0)
-    _sprBuffer2.draw(6)
-    _sprBuffer2.draw(8)
-    // GL.uniform1i(GL.getUniformLocation(_shaderProgram, "sw"), 1)
-    _sprBuffer.draw(3)
+    Gfx.spriteShader.use()
+    GL.uniform2f(Gfx.spriteShader.locations["size"], width, height)
+    GL.uniform2f(Gfx.spriteShader.locations["texSize"], _texSize[0], _texSize[1])
+    GL.uniform1f(Gfx.spriteShader.locations["pixelscale"], _pixelscale)
+    GL.uniform1i(Gfx.spriteShader.locations["texture"], 0)
 
-    _sprBuffer2.draw(7)
-    _sprBuffer2.draw(9)
+    Gfx.layerShader.use()
+    GL.uniform2f(Gfx.layerShader.locations["size"], width, height)
+    GL.uniform2f(Gfx.layerShader.locations["texSize"], _texSize[0], _texSize[1])
+    GL.uniform1f(Gfx.layerShader.locations["pixelscale"], _pixelscale)
+    GL.uniform2f(Gfx.layerShader.locations["tilesize"], 16, 16)
+    GL.uniform1i(Gfx.layerShader.locations["texture"], 0)
+  }
+
+  render(){
+    Gfx.update()
+    Gfx.draw()
+
+    // set layeroffset to -512
+    Gfx.bg0.offset(-512, -512)
+    Gfx.bg1.offset(-513, -512)
+    Gfx.bg2.offset(-513, -513)
+    Gfx.bg3.offset(-512, -513)
+
     
-    _sprBuffer.draw(4)
-    
-    _r = _r + 0.5
-    for(i in 0..._sprBuffer.count){
-      _sprBuffer.setRotation(i, _r)
+
+    _r = _r + 0.05
+    for(s in Gfx.sprites){
+      s.rot = _r
     }
     // var s = (System.clock.sin*2) + 3
-    // _sprBuffer.setScale(0, s, s)
+    // _sprites.setScale(0, s, s)
     // _x = _x - 2
     // _y = _y - 2
-    //_sprBuffer2.setTranslation(0, _x, _y)
+    //_layers.setTranslation(0, _x, _y)
+    //_layers.setRotation(0, _r)
   }
 
   run(){
@@ -173,7 +155,7 @@ class MyApp is Gles2Application {
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){
-        System.print("Frametime %((_frameTime / _frames))ms")
+        System.print("Frametime %(_frameTime / _frames)ms")
       }
     }
   }

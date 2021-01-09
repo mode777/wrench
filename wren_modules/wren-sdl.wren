@@ -1,15 +1,29 @@
 
 class SdlApplication {
 
-  width { _w }
-  height { _h }
+  width { _win.width }
+  height { _win.height }
   title { _title }
   window { _win }
   
   construct new(){
     _event = SdlEvent.new()
+    _handlers = {}
     _flags = SdlWindowFlag.Shown|SdlWindowFlag.Resizable
     sdlSetHints()
+  }
+
+  subscribe(type, fn){
+    var list = _handlers[type] = (_handlers[type] || [])
+    list.add(fn)
+  }
+
+  handle(type, ev){
+    if(_handlers[type]){
+      for(h in _handlers[type]){
+        h.call(ev)
+      }
+    }
   }
 
   sdlAddWindowFlag(flag){
@@ -30,7 +44,10 @@ class SdlApplication {
   }
 
   poll(){
-    if(SDL.pollEvent(_event)) return _event
+    if(SDL.pollEvent(_event)) { 
+      handle(_event.type, _event)
+      return _event
+    }
     return null
   }
 

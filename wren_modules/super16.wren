@@ -1,6 +1,194 @@
-import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat
+import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat, BlendFacSrc, BlendFacDst
+import "images" for Image
 import "buffers" for FloatArray, Uint16Array, Uint8Array, Buffer
 import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices
+import "file" for File
+import "random" for Random
+
+class Gfx {
+
+  static layerShader { __layerShader } 
+  static spriteShader { __spriteShader } 
+  static bg0 { __bg0 }
+  static bg1 { __bg1 }
+  static bg2 { __bg2 }
+  static bg3 { __bg3 }
+  static pixelScale { __pixelscale }
+  static pixelScale=(v) { __pixelscale=v }
+  static spriteBuffer { __spriteBuffer }
+  static layerBuffer { __layerBuffer }
+  static sprites { __sprites }
+
+  static init(){
+    __width = 800
+    __height = 480
+    __pixelscale = 2
+
+    var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
+    var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
+    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "offset"])
+
+    fragCode = File.read("./examples/gles2/fragment.glsl")
+    vertCode = File.read("./examples/gles2/vertex.glsl")
+    __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "texture"])
+
+    __spriteBuffer = SpriteBuffer.new(__spriteShader.program, 1024)
+    __sprites = []
+    for(i in 0...__spriteBuffer.count){
+      __sprites.add(Sprite.new(i))
+    }
+    __layerBuffer = SpriteBuffer.new(__layerShader.program, 4) //16384
+    __bg0 = BgLayer.new(0, 2)
+    __bg1 = BgLayer.new(1, 4)
+    __bg2 = BgLayer.new(2, 6)
+    __bg3 = BgLayer.new(3, 8)
+
+    var img = Image.fromFile("assets/vram.png")
+    __texture = GL.createTexture()
+    GL.bindTexture(TextureTarget.TEXTURE_2D, __texture)
+
+    __texSize = [1024, 1024]
+    GL.texImage2D(TextureTarget.TEXTURE_2D, 0, PixelFormat.RGBA, __texSize[0], __texSize[1], 0, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, TextureMagFilter.NEAREST)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, TextureMinFilter.NEAREST)
+    
+    // load image to vram
+    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
+
+    var random = Random.new(1986)
+    var buffer = Uint8Array.new(32*32*4)
+    for(i in 0...(32*32)){
+      buffer[i*4] = random.int(32)
+      buffer[i*4+1] = random.int(32)
+    }
+    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 512, 512, 32, 32, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
+
+    img.dispose()
+  }
+
+  static update(){
+    __layerBuffer.update()
+    __spriteBuffer.update()
+  }
+
+  static draw(){
+    GL.viewport(0,0,__width,__height)
+    GL.clearColor(0.5, 0.5, 0.5, 1.0)
+    GL.enable(EnableCap.BLEND)
+    GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
+    GL.clear(ClearFlag.COLOR_BUFFER_BIT)
+    
+    GL.activeTexture(TextureUnit.TEXTURE0)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, __texture)
+
+    __spriteShader.use()
+    GL.uniform2f(__spriteShader.locations["size"], __width, __height)
+    GL.uniform2f(__spriteShader.locations["texSize"], __texSize[0], __texSize[1])
+    GL.uniform1f(__spriteShader.locations["pixelscale"], __pixelscale)
+    GL.uniform1i(__spriteShader.locations["texture"], 0)
+
+    __layerShader.use()
+    GL.uniform2f(__layerShader.locations["size"], __width, __height)
+    GL.uniform2f(__layerShader.locations["texSize"], __texSize[0], __texSize[1])
+    GL.uniform1f(__layerShader.locations["pixelscale"], __pixelscale)
+    GL.uniform2f(__layerShader.locations["tilesize"], 16, 16)
+    GL.uniform1i(__layerShader.locations["texture"], 0)
+
+    __layerShader.use()
+    __bg0.draw(false)
+    __bg1.draw(false)
+
+    __spriteShader.use()
+    __spriteBuffer.draw(1)
+
+    __layerShader.use()
+    __bg0.draw(true)
+    __bg1.draw(true)
+    
+    __spriteShader.use()
+    __spriteBuffer.draw(2)
+    
+    __layerShader.use()
+    __bg2.draw(false)
+    __bg3.draw(false)
+    
+    __spriteShader.use()
+    __spriteBuffer.draw(3)
+    
+    __layerShader.use()
+    __bg2.draw(true)
+    __bg3.draw(true)
+
+    __spriteShader.use()
+    __spriteBuffer.draw(4)
+  }
+}
+
+class Shader {
+  locations {_locations }
+  program { _program }
+
+  construct new(vertex, fragment, uniforms){
+    _program = Gles2Util.compileShader(vertex, fragment)
+    _locations = {}
+    for(name in uniforms){
+      _locations[name] = GL.getUniformLocation(_program, name)
+    }
+  }
+
+  use(){
+    GL.useProgram(_program)
+  }
+}
+
+class BgLayer {
+  
+  enabled { _enabled }
+  enabled=(v) { _enabled = v }
+  
+  construct new(id, prio){
+    _id = id
+    _ox = 0
+    _oy = 0
+    _enabled = true
+    _prio = prio
+    Gfx.layerBuffer.setShape(id, 0, 0, 2, 2, 1, 1)
+    Gfx.layerBuffer.setSource(id, 0, 0, 1,1)
+    Gfx.layerBuffer.setPrio(id, prio)
+  }
+
+  offset(x,y){
+    _ox = x
+    _oy = y
+  }
+
+  draw(drawPrio){
+    if(_enabled){
+      GL.uniform2f(Gfx.layerShader.locations["offset"], _ox, _oy)
+      var add = drawPrio ? 1 : 0
+      Gfx.layerBuffer.draw(_prio + add)
+    }
+  }
+}
+
+class Sprite {
+  prio=(v) { Gfx.spriteBuffer.setPrio(_id, v) }
+  rot=(v) { Gfx.spriteBuffer.setRotation(_id,v) }
+
+  construct new(id){
+    _id = id
+  }
+
+  set(w,h,sx,sy) { set(w,h,sx,sy,w/2, h/2) }
+  set(w,h,sx,sy,ox,oy){
+    Gfx.spriteBuffer.setShape(_id, 0, 0, w, h, ox, oy)
+    Gfx.spriteBuffer.setSource(_id, sx, sy, w, h)
+  }
+
+  pos(x,y){
+    Gfx.spriteBuffer.setTranslation(_id, x,y)
+  }
+}
 
 foreign class SpriteBuffer {
   foreign count
@@ -13,139 +201,7 @@ foreign class SpriteBuffer {
   foreign setRotation(i, r)
   foreign setScale(i, x, y)
   foreign setPrio(i, p)
+  foreign getPrio(i)
   foreign update()
   foreign draw(prio)
 }
-
-// class SpriteBuffer {
-//   count { _count }
-
-//   construct new(shader, count){
-//     _count = count
-//     _coordUvLoc = GL.getAttribLocation(shader, "coordUv")
-//     _scaleRotLoc = GL.getAttribLocation(shader, "scaleRot")
-//     _transLoc = GL.getAttribLocation(shader, "trans")
-
-//     _constStride = 12 * 4
-//     _constAttributes = Buffer.new(_constStride * count)
-//     _constBuffer = GL.createBuffer()
-//     GL.bindBuffer(BufferType.ARRAY_BUFFER, _constBuffer)
-//     GL.bufferData(BufferType.ARRAY_BUFFER, _constAttributes, BufferHint.STREAM_DRAW)
-//     initConstAttributes()
-
-//     _varStride = 8*4
-//     _varAttributes = Buffer.new(_varStride * count)
-//     _varBuffer = GL.createBuffer()
-//     GL.bindBuffer(BufferType.ARRAY_BUFFER, _varBuffer)
-//     GL.bufferData(BufferType.ARRAY_BUFFER, _varAttributes, BufferHint.STREAM_DRAW)
-
-//     _indices = GL.createBuffer()
-//     createIndices()
-//   }
-
-//   initConstAttributes(){
-//     _constDefaults = Buffer.new(4)
-//     _constDefaults.writeUint16(0, 4096)
-//     _constDefaults.writeUint16(2, 4096)
-//     for(i in 0..._count){
-//       var offset = _constStride*i
-//       _constDefaults.copyTo(_constAttributes, 0, offset, 4)
-//     }
-//   }
-
-//   createIndices(){
-//     var buffer = Buffer.new(_count*6*2)
-//     for(i in 0..._count){
-//       var offset = i*6*2
-//       var index = i*4
-//       buffer.writeUint16(offset, index+3)
-//       buffer.writeUint16(offset+2, index+2)
-//       buffer.writeUint16(offset+4, index+1)
-//       buffer.writeUint16(offset+6, index+3)
-//       buffer.writeUint16(offset+8, index+1)
-//       buffer.writeUint16(offset+10, index+0)
-//     }
-//     GL.bindBuffer(BufferType.ELEMENT_ARRAY_BUFFER, _indices)
-//     GL.bufferData(BufferType.ELEMENT_ARRAY_BUFFER, buffer, BufferHint.STATIC_DRAW)
-//     buffer.dispose()
-//     //[3,2,1,3,1,0]
-//   }
-  
-//   setShape(i,x, y, w, h, ox, oy){
-//     var offset = _varStride*i
-//     _varAttributes.writeInt16(offset, x-ox)
-//     _varAttributes.writeInt16(offset+2, y+h-oy)
-
-//     _varAttributes.writeInt16(offset+8, x-ox)
-//     _varAttributes.writeInt16(offset+10, y-oy)
-    
-//     _varAttributes.writeInt16(offset+16, x+w-ox)
-//     _varAttributes.writeInt16(offset+18, y-oy)
-
-//     _varAttributes.writeInt16(offset+24, x+w-ox)
-//     _varAttributes.writeInt16(offset+26, y+h-oy)
-//   }
-
-//   setSource(i, x, y, w, h){
-//     var offset = _varStride*i+4
-//     _varAttributes.writeInt16(offset, y)
-//     _varAttributes.writeInt16(offset+2, x)
-
-//     _varAttributes.writeInt16(offset+8, y+h)
-//     _varAttributes.writeInt16(offset+10, x)
-    
-//     _varAttributes.writeInt16(offset+16, y+h)
-//     _varAttributes.writeInt16(offset+18, x+w)
-
-//     _varAttributes.writeInt16(offset+24, y)
-//     _varAttributes.writeInt16(offset+26, x+w)
-//   }
-
-//   setTranslation(i, x, y){
-//     var offset = _varStride*i+8
-//     _constAttributes.writeInt16(offset, x)
-//     _constAttributes.writeInt16(offset+2, y)
-//   }
-
-//   setRotation(i, r){
-//     var offset = _constStride*i+4
-//     _constAttributes.writeUint16(offset, 10430 * r)
-//     // _constAttributes.writeUint16(offset+2, 32768 * (r.cos+1))
-//   }
-
-//   setScale(i, x, y){
-//     var offset = _constStride*i
-//     _constAttributes.writeUint16(offset, 4096 * x)
-//     _constAttributes.writeUint16(offset+2, 4096 * y)
-//   }
-
-//   copyAttributes(i){
-//     var srcOffset = _constStride*i
-//     _constAttributes.copyTo(_constAttributes, srcOffset, srcOffset+12, 12)
-//     _constAttributes.copyTo(_constAttributes, srcOffset, srcOffset+24, 12)
-//     _constAttributes.copyTo(_constAttributes, srcOffset, srcOffset+36, 12)
-//   }
-
-//   update(){
-//     GL.bindBuffer(BufferType.ARRAY_BUFFER, _varBuffer)
-//     GL.bufferSubData(BufferType.ARRAY_BUFFER, 0, _varAttributes.size, _varAttributes)
-//     GL.vertexAttribPointer(_coordUvLoc, 4, DataType.SHORT, false, 0, 0)
-//     GL.enableVertexAttribArray(_coordUvLoc)
-
-//     for(i in 0..._count){
-//       copyAttributes(i)
-//     }
-
-//     GL.bindBuffer(BufferType.ARRAY_BUFFER, _constBuffer)
-//     GL.bufferSubData(BufferType.ARRAY_BUFFER, 0, _constAttributes.size, _constAttributes)
-//     GL.vertexAttribPointer(_scaleRotLoc, 4, DataType.UNSIGNED_SHORT, false, 12, 0)
-//     GL.vertexAttribPointer(_transLoc, 2, DataType.SHORT, false, 12, 8)
-//     GL.enableVertexAttribArray(_scaleRotLoc)
-//     GL.enableVertexAttribArray(_transLoc)
-//   }
-
-//   draw(){
-//     GL.bindBuffer(BufferType.ELEMENT_ARRAY_BUFFER, _indices)
-//     GL.drawElements(PrimitveType.TRIANGLES, _count*6, DataType.UNSIGNED_SHORT, 0)
-//   }
-// }

@@ -4,12 +4,16 @@ attribute vec2 trans;
 
 uniform vec2 size;
 uniform mediump vec2 texSize;
-uniform float prio;
+uniform mediump float prio;
+uniform mediump vec2 tilesize;
+uniform mediump float pixelscale;
+uniform vec2 offset;
 
 varying vec2 texcoord;
 
 void main(void) {
-    vec2 uv = coordUv.zw - (size / 64.0);
+    vec2 screensize = (size / tilesize / pixelscale);
+    vec2 uv = (coordUv.zw * screensize) - (screensize / 2.0);// - (size / (tilesize * pixelscale * 2.0));
 
     float r = -(scaleRot.z / 10430.0);
     float s = sin(r);
@@ -23,16 +27,15 @@ void main(void) {
     float m3 = sy * -s;
     float m4 = sy * c;
 
-    float m6 = -(trans.x-(size.x/2.0)) / 32.0;
-    float m7 = -(trans.y-(size.y/2.0)) / 32.0;
+    vec2 translation = -trans - offset + (screensize / 2.0);
 
-    mat3 transformation = mat3(m0, m1, 0.0, m3, m4, 0.0, m6, m7, 1.0);
+    mat3 transformation = mat3(m0, m1, 0.0, m3, m4, 0.0, translation.x, translation.y, 1.0);
     texcoord = (transformation * vec3(uv, 1.0)).xy;
     //  1-l  1-h  2-l  2-h  3-l  3-h  4-l  4-h 
     // 0010 0011 0100 0101 0110 0111 1000 1001
     //    2    3    4    5    6    7    8    9
     float sprio = floor(scaleRot.w+0.1 / 2.0);
     float mult = step(prio, sprio) * step(sprio, prio);
-    vec2 xy = mult * (coordUv.xy / (size / 2.0) - 1.0) * vec2(1.0, -1.0);
+    vec2 xy = mult * coordUv.xy * vec2(1.0, -1.0);
     gl_Position = vec4(xy, 0.0, 1.0);
 }

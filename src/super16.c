@@ -194,6 +194,12 @@ static void set_prio(WrenVM* vm){
   }
 }
 
+static void get_prio(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  wrenSetSlotDouble(vm, 0, buffer->quads[i].corners[0].prio);
+}
+
 static void update(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
   glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
@@ -204,7 +210,6 @@ static void draw(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
   GLfloat prio = (GLint)wrenGetSlotDouble(vm, 1);
 
-  glUseProgram(buffer->program);
   glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
   glVertexAttribPointer(buffer->coordUvLoc, 4, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, x));
   glVertexAttribPointer(buffer->scaleRotLoc, 4, GL_UNSIGNED_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, sx));
@@ -231,6 +236,7 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("super16.SpriteBuffer.setRotation(_,_)", set_rotation);
   wrt_bind_method("super16.SpriteBuffer.setScale(_,_,_)", set_scale);
   wrt_bind_method("super16.SpriteBuffer.setPrio(_,_)", set_prio);
+  wrt_bind_method("super16.SpriteBuffer.getPrio(_)", get_prio);
   wrt_bind_method("super16.SpriteBuffer.update()", update);
   wrt_bind_method("super16.SpriteBuffer.draw(_)", draw);
   wrt_bind_method("super16.SpriteBuffer.count", count);
