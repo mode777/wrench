@@ -11,7 +11,7 @@ void main(void) {
   tile *= 255.0;
   lowp float prioFlag = tile.z;
   lowp float uPrio = mod(prio, 2.0);
-  lowp float tPrio = sign(tile.z);
+  lowp float tPrio = tile.z;
   lowp float mult = step(0.2, abs(uPrio - tPrio));
   tile *= mult;
 
@@ -19,5 +19,4 @@ void main(void) {
   
   lowp vec2 offset = fract(texcoord);
   gl_FragColor = texture2D(texture, (tile.xy + offset) / oneTile);
-  gl_FragColor.r = tPrio;
 }
