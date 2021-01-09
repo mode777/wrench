@@ -25,7 +25,7 @@ class MyApp is Gles2Application {
     _spritesEnb = true
     _pixelscale = 2
     createWindow(800, 480, "2d Demo")
-    setVsync(true)
+    setVsync(false)
     Gfx.init()
 
     subscribe(SdlEventType.Keyup){|ev|
@@ -74,13 +74,14 @@ class MyApp is Gles2Application {
       while(ev = poll()){
         if(ev.type == SdlEventType.Quit) _quit = true
       }
+      render()
       swap()
-      if(_frames % 2 == 0){
-        render()
-        checkErrors()
-      }
+      checkErrors()
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
+      if(_time < 33.33){
+        SDL.delay(33.33-_time)
+      }
       if(_frames % 100 == 0){
         System.print("Frametime %(_frameTime / _frames)ms")
       }
