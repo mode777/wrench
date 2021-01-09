@@ -54,7 +54,7 @@ class MyApp is Gles2Application {
     Gfx.bg2.offset(-513, -513)
     Gfx.bg3.offset(-512, -513)
 
-    _r = _r + 0.05
+    _r = _r + 0.25
     for(s in Gfx.sprites){
       s.rot = _r
     }
@@ -74,9 +74,11 @@ class MyApp is Gles2Application {
       while(ev = poll()){
         if(ev.type == SdlEventType.Quit) _quit = true
       }
-      render()
-      checkErrors()
-      swap()
+      if(_frames % 2 == 0){
+        swap()
+        render()
+        checkErrors()
+      }
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){

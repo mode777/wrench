@@ -22,7 +22,7 @@ class Gfx {
   static init(){
     __width = 800
     __height = 480
-    __pixelscale = 1
+    __pixelscale = 2
 
     var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
     var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
