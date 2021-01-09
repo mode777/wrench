@@ -49,10 +49,10 @@ class MyApp is Gles2Application {
     Gfx.draw()
 
     // set layeroffset to -512
-    Gfx.bg0.offset(-512, -512)
-    Gfx.bg1.offset(-513, -512)
-    Gfx.bg2.offset(-513, -513)
-    Gfx.bg3.offset(-512, -513)
+    // Gfx.bg0.offset(-512, -512)
+    // Gfx.bg1.offset(-513, -512)
+    // Gfx.bg2.offset(-513, -513)
+    // Gfx.bg3.offset(-512, -513)
 
     _r = _r + 0.05
     for(s in Gfx.sprites){
