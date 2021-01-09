@@ -45,6 +45,7 @@ class MyApp is Gles2Application {
   }
 
   render(){
+    Gfx.update()
     Gfx.draw()
 
     // set layeroffset to -512
@@ -57,7 +58,6 @@ class MyApp is Gles2Application {
     for(s in Gfx.sprites){
       s.rot = _r
     }
-    Gfx.update()
     // var s = (System.clock.sin*2) + 3
     // _sprites.setScale(0, s, s)
     // _x = _x - 2
