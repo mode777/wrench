@@ -37,11 +37,11 @@ class MyApp is Gles2Application {
       if(ev.key_sym == SdlKeyCode.F) System.print("Frametime %(_frameTime / _frames)ms")
     }
 
-    for(s in Gfx.sprites){
-      s.set(16, 16, 16, 0)
-      s.prio = 1+_random.int(4)
-      s.pos(_random.int(width/2),_random.int(height/2))
-    }
+    // for(s in Gfx.sprites){
+    //   s.set(16, 16, 16, 0)
+    //   s.prio = 1+_random.int(4)
+    //   s.pos(_random.int(width/2),_random.int(height/2))
+    // }
   }
 
   render(){
