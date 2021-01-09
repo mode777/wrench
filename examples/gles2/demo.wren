@@ -37,6 +37,7 @@ class MyApp is Gles2Application {
       if(ev.key_sym == SdlKeyCode.Num3) Gfx.pixelScale = 3//_layersEnb[2] = !_layersEnb[2]
       if(ev.key_sym == SdlKeyCode.Num4) Gfx.pixelScale = 4//_layersEnb[3] = !_layersEnb[3]
       if(ev.key_sym == SdlKeyCode.Num5) _spritesEnb = !_spritesEnb
+      if(ev.key_sym == SdlKeyCode.F) System.print("Frametime %(_frameTime / _frames)ms")
     }
 
     for(s in Gfx.sprites){
@@ -155,7 +156,7 @@ class MyApp is Gles2Application {
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){
-        System.print("Frametime %(_frameTime / _frames)ms")
+        //System.print("Frametime %(_frameTime / _frames)ms")
       }
     }
   }
