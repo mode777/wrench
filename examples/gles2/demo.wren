@@ -74,8 +74,8 @@ class MyApp is Gles2Application {
       while(ev = poll()){
         if(ev.type == SdlEventType.Quit) _quit = true
       }
+      swap()
       if(_frames % 2 == 0){
-        swap()
         render()
         checkErrors()
       }
