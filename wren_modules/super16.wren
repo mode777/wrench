@@ -60,6 +60,7 @@ class Gfx {
     for(i in 0...(32*32)){
       buffer[i*4] = random.int(32)
       buffer[i*4+1] = random.int(32)
+      buffer[i*4+2] = random.int(2)
     }
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 512, 512, 32, 32, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
 

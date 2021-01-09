@@ -34,8 +34,9 @@ void main(void) {
     //  1-l  1-h  2-l  2-h  3-l  3-h  4-l  4-h 
     // 0010 0011 0100 0101 0110 0111 1000 1001
     //    2    3    4    5    6    7    8    9
-    float sprio = floor(scaleRot.w+0.1 / 2.0);
-    float mult = step(prio, sprio) * step(sprio, prio);
+    float aPrio = floor(scaleRot.w / 2.0);
+    float uPrio = floor(prio / 2.0);
+    float mult = step(aPrio, uPrio) * step(uPrio, aPrio);
     vec2 xy = mult * coordUv.xy * vec2(1.0, -1.0);
     gl_Position = vec4(xy, 0.0, 1.0);
 }
