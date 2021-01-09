@@ -19,5 +19,5 @@ void main(void) {
   
   lowp vec2 offset = fract(texcoord);
   gl_FragColor = texture2D(texture, (tile.xy + offset) / oneTile);
-  gl_FragColor.r = 0.0;
+  gl_FragColor.r = tPrio;
 }
