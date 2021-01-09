@@ -3,10 +3,10 @@ attribute vec4 scaleRot;
 attribute vec2 trans;
 
 uniform vec2 size;
-uniform highp vec2 texSize;
-uniform highp float prio;
-uniform highp vec2 tilesize;
-uniform highp float pixelscale;
+uniform mediump vec2 texSize;
+uniform mediump float prio;
+uniform mediump vec2 tilesize;
+uniform mediump float pixelscale;
 uniform vec2 offset;
 
 varying vec2 texcoord;

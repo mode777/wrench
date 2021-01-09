@@ -1,22 +1,22 @@
 uniform sampler2D texture;
 
-varying highp vec2 texcoord;
-uniform highp vec2 texSize;
-uniform highp float pixelscale;
-uniform highp float prio;
-uniform highp vec2 tilesize;
+varying mediump vec2 texcoord;
+uniform mediump vec2 texSize;
+uniform mediump float pixelscale;
+uniform mediump float prio;
+uniform mediump vec2 tilesize;
 
 void main(void) {
-  highp vec4 tile = texture2D(texture, texcoord / texSize);
+  mediump vec4 tile = texture2D(texture, texcoord / texSize);
   tile *= 255.0;
-  highp float prioFlag = tile.z;
-  highp float uPrio = mod(prio, 2.0);
-  highp float tPrio = sign(tile.z);
-  highp float mult = step(tPrio, uPrio) * step(uPrio, tPrio);
+  mediump float prioFlag = tile.z;
+  mediump float uPrio = mod(prio, 2.0);
+  mediump float tPrio = sign(tile.z);
+  mediump float mult = step(tPrio, uPrio) * step(uPrio, tPrio);
   tile *= mult;
 
-  highp vec2 oneTile = (texSize / tilesize);
+  mediump vec2 oneTile = (texSize / tilesize);
   
-  highp vec2 offset = fract(texcoord);
+  mediump vec2 offset = fract(texcoord);
   gl_FragColor = texture2D(texture, (tile.xy + offset) / oneTile);
 }
