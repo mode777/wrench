@@ -29,19 +29,19 @@ class MyApp is Gles2Application {
     Gfx.init()
 
     subscribe(SdlEventType.Keyup){|ev|
-      if(ev.key_sym == SdlKeyCode.Num1) Gfx.pixelScale = 1//_layersEnb[0] = !_layersEnb[0]
-      if(ev.key_sym == SdlKeyCode.Num2) Gfx.pixelScale = 2//_layersEnb[1] = !_layersEnb[1]
-      if(ev.key_sym == SdlKeyCode.Num3) Gfx.pixelScale = 3//_layersEnb[2] = !_layersEnb[2]
-      if(ev.key_sym == SdlKeyCode.Num4) Gfx.pixelScale = 4//_layersEnb[3] = !_layersEnb[3]
+      if(ev.key_sym == SdlKeyCode.Num1) Gfx.pixelScale = 1 //_layersEnb[0] = !_layersEnb[0]
+      if(ev.key_sym == SdlKeyCode.Num2) Gfx.pixelScale = 2 //_layersEnb[1] = !_layersEnb[1]
+      if(ev.key_sym == SdlKeyCode.Num3) Gfx.pixelScale = 3 //_layersEnb[2] = !_layersEnb[2]
+      if(ev.key_sym == SdlKeyCode.Num4) Gfx.pixelScale = 4 //_layersEnb[3] = !_layersEnb[3]
       if(ev.key_sym == SdlKeyCode.Num5) _spritesEnb = !_spritesEnb
       if(ev.key_sym == SdlKeyCode.F) System.print("Frametime %(_frameTime / _frames)ms")
     }
 
-    // for(s in Gfx.sprites){
-    //   s.set(16, 16, 16, 0)
-    //   s.prio = 1+_random.int(4)
-    //   s.pos(_random.int(width/2),_random.int(height/2))
-    // }
+    for(s in Gfx.sprites){
+      s.set(16, 16, 16, 0)
+      s.prio = 1+_random.int(4)
+      s.pos(_random.int(width/2),_random.int(height/2))
+    }
   }
 
   render(){
@@ -49,15 +49,15 @@ class MyApp is Gles2Application {
     Gfx.draw()
 
     // set layeroffset to -512
-    // Gfx.bg0.offset(-512, -512)
-    // Gfx.bg1.offset(-513, -512)
-    // Gfx.bg2.offset(-513, -513)
-    // Gfx.bg3.offset(-512, -513)
+    Gfx.bg0.offset(-512, -512)
+    Gfx.bg1.offset(-513, -512)
+    Gfx.bg2.offset(-513, -513)
+    Gfx.bg3.offset(-512, -513)
 
     _r = _r + 0.05
-    for(s in Gfx.sprites){
-      s.rot = _r
-    }
+    // for(s in 1024){
+    //   s.rot = _r
+    // }
     // var s = (System.clock.sin*2) + 3
     // _sprites.setScale(0, s, s)
     // _x = _x - 2
@@ -80,7 +80,7 @@ class MyApp is Gles2Application {
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){
-        //System.print("Frametime %(_frameTime / _frames)ms")
+        System.print("Frametime %(_frameTime / _frames)ms")
       }
     }
   }

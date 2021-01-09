@@ -32,7 +32,7 @@ class Gfx {
     vertCode = File.read("./examples/gles2/vertex.glsl")
     __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "texture"])
 
-    __spriteBuffer = SpriteBuffer.new(__spriteShader.program, 1024)
+    __spriteBuffer = SpriteBuffer.new(__spriteShader.program, 16384)
     __sprites = []
     for(i in 0...__spriteBuffer.count){
       __sprites.add(Sprite.new(i))
@@ -95,33 +95,33 @@ class Gfx {
     GL.uniform2f(__layerShader.locations["tilesize"], 16, 16)
     GL.uniform1i(__layerShader.locations["texture"], 0)
 
-    __layerShader.use()
-    __bg0.draw(false)
-    __bg1.draw(false)
+    // __layerShader.use()
+    // __bg0.draw(false)
+    // __bg1.draw(false)
 
     __spriteShader.use()
     __spriteBuffer.draw(1)
 
-    __layerShader.use()
-    __bg0.draw(true)
-    __bg1.draw(true)
+    // __layerShader.use()
+    // __bg0.draw(true)
+    // __bg1.draw(true)
     
-    __spriteShader.use()
-    __spriteBuffer.draw(2)
+    // __spriteShader.use()
+    // __spriteBuffer.draw(2)
     
-    __layerShader.use()
-    __bg2.draw(false)
-    __bg3.draw(false)
+    // __layerShader.use()
+    // __bg2.draw(false)
+    // __bg3.draw(false)
     
-    __spriteShader.use()
-    __spriteBuffer.draw(3)
+    // __spriteShader.use()
+    // __spriteBuffer.draw(3)
     
-    __layerShader.use()
-    __bg2.draw(true)
-    __bg3.draw(true)
+    // __layerShader.use()
+    // __bg2.draw(true)
+    // __bg3.draw(true)
 
-    __spriteShader.use()
-    __spriteBuffer.draw(4)
+    // __spriteShader.use()
+    // __spriteBuffer.draw(4)
   }
 }
 
