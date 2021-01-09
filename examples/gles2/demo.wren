@@ -29,10 +29,10 @@ class MyApp is Gles2Application {
     Gfx.init()
 
     subscribe(SdlEventType.Keyup){|ev|
-      if(ev.key_sym == SdlKeyCode.Num1) Gfx.pixelScale = 1 //_layersEnb[0] = !_layersEnb[0]
-      if(ev.key_sym == SdlKeyCode.Num2) Gfx.pixelScale = 2 //_layersEnb[1] = !_layersEnb[1]
-      if(ev.key_sym == SdlKeyCode.Num3) Gfx.pixelScale = 3 //_layersEnb[2] = !_layersEnb[2]
-      if(ev.key_sym == SdlKeyCode.Num4) Gfx.pixelScale = 4 //_layersEnb[3] = !_layersEnb[3]
+      if(ev.key_sym == SdlKeyCode.Num1) Gfx.pixelScale = 1//_layersEnb[0] = !_layersEnb[0]
+      if(ev.key_sym == SdlKeyCode.Num2) Gfx.pixelScale = 2//_layersEnb[1] = !_layersEnb[1]
+      if(ev.key_sym == SdlKeyCode.Num3) Gfx.pixelScale = 3//_layersEnb[2] = !_layersEnb[2]
+      if(ev.key_sym == SdlKeyCode.Num4) Gfx.pixelScale = 4//_layersEnb[3] = !_layersEnb[3]
       if(ev.key_sym == SdlKeyCode.Num5) _spritesEnb = !_spritesEnb
       if(ev.key_sym == SdlKeyCode.F) System.print("Frametime %(_frameTime / _frames)ms")
     }
@@ -55,9 +55,9 @@ class MyApp is Gles2Application {
     Gfx.bg3.offset(-512, -513)
 
     _r = _r + 0.05
-    // for(s in 1024){
-    //   s.rot = _r
-    // }
+    for(s in Gfx.sprites){
+      s.rot = _r
+    }
     // var s = (System.clock.sin*2) + 3
     // _sprites.setScale(0, s, s)
     // _x = _x - 2
