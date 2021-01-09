@@ -58,7 +58,7 @@ class Gfx {
     var random = Random.new(1986)
     var buffer = Uint8Array.new(32*32*4)
     for(i in 0...(32*32)){
-      buffer[i*4] = i % 32
+      buffer[i*4] = 32 - i % 32
       buffer[i*4+1] = i / 32
       buffer[i*4+2] = i % 2
     }
