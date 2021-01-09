@@ -9,7 +9,7 @@ uniform lowp float prio;
 uniform lowp vec2 tilesize;
 
 void main(void) {
-  lowp vec4 tile = texture2D(map, floor(texcoord) / mapSize);
+  lowp vec4 tile = texture2D(map, (floor(texcoord)+0.5) / mapSize);
   tile *= 255.0;
   lowp float uPrio = mod(prio, 2.0);
   lowp float tPrio = tile.z;
