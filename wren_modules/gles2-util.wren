@@ -1,7 +1,16 @@
-import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam 
+import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat, BlendFacSrc, BlendFacDst
 import "buffers" for FloatArray, Uint16Array
 
 class Gles2Util {
+  static createTexture(w,h){
+    var texture = GL.createTexture()
+    GL.bindTexture(TextureTarget.TEXTURE_2D, texture)
+    GL.texImage2D(TextureTarget.TEXTURE_2D, 0, PixelFormat.RGBA, w, h, 0, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, TextureMagFilter.NEAREST)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, TextureMinFilter.NEAREST)
+    return texture 
+  }
+
   static compileShader(vertCode, fragCode){
     var vertShader = GL.createShader(ShaderType.VERTEX_SHADER)
     GL.shaderSource(vertShader, vertCode)

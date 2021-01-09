@@ -49,10 +49,10 @@ class MyApp is Gles2Application {
     Gfx.draw()
 
     // set layeroffset to -512
-    Gfx.bg0.offset(-512, -512)
-    Gfx.bg1.offset(-513, -512)
-    Gfx.bg2.offset(-513, -513)
-    Gfx.bg3.offset(-512, -513)
+    // Gfx.bg0.offset(-512, -512)
+    // Gfx.bg1.offset(-513, -512)
+    // Gfx.bg2.offset(-513, -513)
+    // Gfx.bg3.offset(-512, -513)
 
     _r = _r + 0.25
     for(s in Gfx.sprites){
@@ -79,9 +79,9 @@ class MyApp is Gles2Application {
       checkErrors()
       
       var passed = SDL.ticks - _time
-      if(passed < 33.33){
-        SDL.delay(33.33-passed)
-      }
+      // if(passed < 33.33){
+      //   SDL.delay(33.33-passed)
+      // }
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){

@@ -26,7 +26,7 @@ class Gfx {
 
     var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
     var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
-    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "offset"])
+    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "offset", "map"])
 
     fragCode = File.read("./examples/gles2/fragment.glsl")
     vertCode = File.read("./examples/gles2/vertex.glsl")
@@ -43,17 +43,16 @@ class Gfx {
     __bg2 = BgLayer.new(2, 6)
     __bg3 = BgLayer.new(3, 8)
 
-    var img = Image.fromFile("assets/vram.png")
-    __texture = GL.createTexture()
-    GL.bindTexture(TextureTarget.TEXTURE_2D, __texture)
 
     __texSize = [1024, 1024]
-    GL.texImage2D(TextureTarget.TEXTURE_2D, 0, PixelFormat.RGBA, __texSize[0], __texSize[1], 0, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE)
-    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, TextureMagFilter.NEAREST)
-    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, TextureMinFilter.NEAREST)
+    __texture = Gles2Util.createTexture(__texSize[0], __texSize[1])
     
     // load image to vram
+    var img = Image.fromFile("assets/vram.png")
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
+    img.dispose()
+
+    __map = Gles2Util.createTexture(128,128)
 
     var random = Random.new(1986)
     var buffer = Uint8Array.new(32*32*4)
@@ -62,9 +61,8 @@ class Gfx {
       buffer[i*4+1] = i / 32
       buffer[i*4+2] = i % 2
     }
-    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 512, 512, 32, 32, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
+    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, 32, 32, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, buffer)
 
-    img.dispose()
   }
 
   static update(){
@@ -82,6 +80,9 @@ class Gfx {
     GL.activeTexture(TextureUnit.TEXTURE0)
     GL.bindTexture(TextureTarget.TEXTURE_2D, __texture)
 
+    GL.activeTexture(TextureUnit.TEXTURE1)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, __map)
+
     __spriteShader.use()
     GL.uniform2f(__spriteShader.locations["size"], __width, __height)
     GL.uniform2f(__spriteShader.locations["texSize"], __texSize[0], __texSize[1])
@@ -94,6 +95,7 @@ class Gfx {
     GL.uniform1f(__layerShader.locations["pixelscale"], __pixelscale)
     GL.uniform2f(__layerShader.locations["tilesize"], 16, 16)
     GL.uniform1i(__layerShader.locations["texture"], 0)
+    GL.uniform1i(__layerShader.locations["map"], 1)
 
     __layerShader.use()
     __bg0.draw(false)
