@@ -13,12 +13,11 @@ void main(void) {
   highp float uPrio = mod(prio, 2.0);
   highp float tPrio = sign(tile.z);
   highp float mult = step(tPrio, uPrio) * step(uPrio, tPrio);
-  //tile *= mult;
+  tile *= mult;
 
   highp vec2 oneTile = (texSize / tilesize);
   
   highp vec2 offset = fract(texcoord);
   highp vec4 pixel = texture2D(texture, (tile.xy + offset) / oneTile);  
-  pixel.a *= mult;
   gl_FragColor = pixel;
 }
