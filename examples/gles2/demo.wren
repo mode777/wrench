@@ -77,11 +77,13 @@ class MyApp is Gles2Application {
       render()
       swap()
       checkErrors()
+      
+      var passed = SDL.ticks - _time
+      if(passed < 33.33){
+        SDL.delay(33.33-passed)
+      }
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
-      if(_time < 33.33){
-        SDL.delay(33.33-_time)
-      }
       if(_frames % 100 == 0){
         System.print("Frametime %(_frameTime / _frames)ms")
       }
