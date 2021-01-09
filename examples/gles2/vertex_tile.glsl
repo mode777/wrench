@@ -27,7 +27,7 @@ void main(void) {
     float m3 = sy * -s;
     float m4 = sy * c;
 
-    vec2 translation = -trans - offset + (screensize / 2.0);
+    vec2 translation = -(trans / tilesize) + (screensize / 2.0);
 
     mat3 transformation = mat3(m0, m1, 0.0, m3, m4, 0.0, translation.x, translation.y, 1.0);
     texcoord = (transformation * vec3(uv, 1.0)).xy;

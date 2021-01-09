@@ -6,7 +6,7 @@ import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices
 import "file" for File
 import "shapes" for Rectangle
 import "random" for Random
-import "super16" for SpriteBuffer, BgLayer, Gfx
+import "super16" for SpriteBuffer, Gfx
 import "images" for Image
 
 class MyApp is Gles2Application {
@@ -20,6 +20,7 @@ class MyApp is Gles2Application {
     _frames = 0
     _time = 0
     _r = 0
+    _offset = [0,0]
     _random = Random.new(1986)
     _layersEnb = [true, true, true, true]
     _spritesEnb = true
@@ -38,7 +39,7 @@ class MyApp is Gles2Application {
     }
 
     for(s in Gfx.sprites){
-      s.set(16, 16, 16, 0)
+      s.set(16, 16, 54*16, 16*16)
       s.prio = 1+_random.int(4)
       s.pos(_random.int(width/2),_random.int(height/2))
     }
@@ -48,15 +49,17 @@ class MyApp is Gles2Application {
     Gfx.update()
     Gfx.draw()
 
-    // set layeroffset to -512
-    Gfx.bg0.offset(0,0)
-    Gfx.bg1.offset(-1,0)
-    Gfx.bg2.offset(-1,-1)
-    Gfx.bg3.offset(0,-1)
+    _offset[0] = -(SDL.ticks/1000).sin * 100 
+    _offset[1] = (SDL.ticks/1000).cos * 100
+
+    Gfx.bg0.pos(_offset[0], _offset[1])
+    Gfx.bg1.pos(-_offset[0], _offset[1])
+    Gfx.bg2.pos(-_offset[0], -_offset[1])
+    Gfx.bg3.pos(_offset[0], -_offset[1])
 
     _r = _r + 0.25
     for(s in Gfx.sprites){
-      s.rot = _r
+      s.rot = _r+s.id/300
     }
     // var s = (System.clock.sin*2) + 3
     // _sprites.setScale(0, s, s)
@@ -79,9 +82,9 @@ class MyApp is Gles2Application {
       checkErrors()
       
       var passed = SDL.ticks - _time
-      // if(passed < 33.33){
-      //   SDL.delay(33.33-passed)
-      // }
+      if(passed < 33.33){
+        SDL.delay(33.33-passed)
+      }
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){
