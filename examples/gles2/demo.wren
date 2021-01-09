@@ -80,7 +80,7 @@ class MyApp is Gles2Application {
       _frames = _frames+1
       _frameTime = _frameTime + SDL.ticks - _time
       if(_frames % 100 == 0){
-        System.print("Frametime %(_frameTime / _frames)ms")
+        //System.print("Frametime %(_frameTime / _frames)ms")
       }
     }
   }
