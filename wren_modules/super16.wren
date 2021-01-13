@@ -99,10 +99,10 @@ class Super16 {
       __app.swap()
       __app.checkErrors()
       
-      var passed = SDL.ticks - __time
-      if(passed < 33.33){
-        SDL.delay(33.33-passed)
-      }
+      // var passed = SDL.ticks - __time
+      // if(passed < 33.33){
+      //   SDL.delay(33.33-passed)
+      // }
       __frames = __frames+1
       __frameTime = __frameTime + SDL.ticks - __time
       if(__frames == 100){
