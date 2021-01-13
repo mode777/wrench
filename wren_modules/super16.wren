@@ -3,7 +3,117 @@ import "images" for Image
 import "buffers" for FloatArray, Uint16Array, Uint8Array, Buffer
 import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices
 import "file" for File
-import "random" for Random
+import "gles2-app" for Gles2Application
+import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
+
+class Time {
+}
+
+class Input {
+  static a { SDL.isKeyDown(SdlKeyCode.A) }
+  static b { SDL.isKeyDown(SdlKeyCode.S) }
+  static x { SDL.isKeyDown(SdlKeyCode.Y) }
+  static y { SDL.isKeyDown(SdlKeyCode.X) }
+  static start { SDL.isKeyDown(SdlKeyCode.Return) }
+  static select { SDL.isKeyDown(SdlKeyCode.Space) }
+  static left { SDL.isKeyDown(SdlKeyCode.Left) }
+  static right { SDL.isKeyDown(SdlKeyCode.Right) }
+  static up { SDL.isKeyDown(SdlKeyCode.Up) }
+  static down { SDL.isKeyDown(SdlKeyCode.Down) }
+}
+
+class Sub {
+  static running { __subs.count }
+  
+  static wait(loops){
+    if(loops == 0) return Fiber.yield()
+    var c = 0
+    while(c < loops){
+      c = c+1
+      Fiber.yield()
+    }
+  }
+  static step() { Fiber.yield() }
+
+  static init(){
+    __subs = []
+    __delete = []
+  }
+
+  static update(){
+    for(i in 0...__subs.count){
+      __subs[i].call()
+      if(__subs[i].isDone) __delete.add(i)
+    }
+    for(i in __delete){
+      __subs.removeAt(i)
+    }
+    __delete.clear()
+  }
+  
+  static run(fn) {
+    var f = Fiber.new(fn)
+    __subs.add(f)
+  }
+}
+
+class Super16 {
+  static app { __app }
+  static init(fn){ Super16.init({}, fn) }
+  static time { SDL.ticks }
+  
+  static init(options, fn){
+    __app = Gles2Application.new()
+    __app.setVsync(false)
+    __app.createWindow(options["width"] || 800, options["height"] || 480, options["title"] || "Super16")
+    Sub.init()
+    Gfx.init(options)
+    fn.call()
+  }
+
+  static run() { Super16.run(null) }
+
+  static run(fn){
+    __quit = false
+    __frames = 0
+    __frameTime = 0
+
+    if(fn){
+      Sub.run {
+        while(true){
+          fn.call()
+          Fiber.yield()
+        }
+      }
+    }
+
+    while(!__quit && Sub.running > 0){
+      __time = SDL.ticks
+      var ev = null
+      while(ev = __app.poll()){
+        if(ev.type == SdlEventType.Quit) __quit = true
+      }
+      Gfx.update()
+      Gfx.draw()
+      Sub.update()
+      __app.swap()
+      __app.checkErrors()
+      
+      var passed = SDL.ticks - __time
+      if(passed < 33.33){
+        SDL.delay(33.33-passed)
+      }
+      __frames = __frames+1
+      __frameTime = __frameTime + SDL.ticks - __time
+      if(__frames == 100){
+        System.print("Frametime %(__frameTime / 100)ms")
+        __frames = 0
+        __frameTime = 0
+      }
+    }
+  }
+
+}
 
 class Gfx {
 
@@ -19,15 +129,24 @@ class Gfx {
   static bg1 { __bg1 }
   static bg2 { __bg2 }
   static bg3 { __bg3 }
+  static width { Super16.app.width }
+  static height { Super16.app.height }
+  static tid(x,y) { (y<<8) | x }
 
-  static init(){
-    __width = 800
-    __height = 480
-    __pixelscale = 2
+
+  static vram(x,y,img){
+    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
+  }
+
+  // internal
+  static init(options){
+    __width = options["width"] || 800
+    __height = options["height"] || 480
+    __pixelscale = options["scale"] || 2
 
     var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
     var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
-    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "map", "mapSize"])
+    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "map", "mapSize", "pixelation"])
 
     fragCode = File.read("./examples/gles2/fragment.glsl")
     vertCode = File.read("./examples/gles2/vertex.glsl")
@@ -46,12 +165,7 @@ class Gfx {
     __layers = [__bg0, __bg1, __bg2, __bg3]
 
     __texSize = [1024, 1024]
-    __texture = Gles2Util.createTexture(__texSize[0], __texSize[1])
-    
-    // load image to vram
-    var img = Image.fromFile("assets/vram.png")
-    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
-    img.dispose()
+    __texture = Gles2Util.createTexture(__texSize[0], __texSize[1])    
   }
 
   static update(){
@@ -122,6 +236,7 @@ class BgLayer {
   
   enabled { _enabled }
   enabled=(v) { _enabled = v }
+  mosaic=(v) { _pixel = 2.pow(v) }
   
   construct new(w,h,id,prio){
     _w = w
@@ -133,6 +248,8 @@ class BgLayer {
     _id = id
     _enabled = true
     _prio = prio
+    _tilesize = [16,16]
+    _pixel = 1
     Gfx.layerBuffer.setShape(id, 0, 0, 2, 2, 1, 1)
     Gfx.layerBuffer.setSource(id, 0, 0, 1,1)
     Gfx.layerBuffer.setPrio(id, prio)
@@ -142,10 +259,32 @@ class BgLayer {
     Gfx.layerBuffer.setTranslation(_id, x, y)
   }
   
-  tile(x,y, sx, sy){
-    var offset = (y*_w+x)*4
-    _uint8[offset] = sx
-    _uint8[offset+1] = sy
+  // todo bounds checking
+  tile(x,y, tid){
+    var offset = (y*_w+x)*2
+    _uint16[offset] = tid
+  }
+
+  // todo bounds checking
+  [x,y] { _uint16[(y*_w+x)*2] }
+
+  // todo bounds checking
+  tileFill(x,y,w,h,tid){
+    for(cy in y...(y+h)){
+      for(cx in x...(x+w)){
+        tile(cx,cy,tid)
+      }
+    }
+  }
+
+  // todo bounds checking
+  tilePlot(x,y,w,h,list){
+    for(cy in y...(y+h)){
+      for(cx in x...(x+w)){
+        var tid = list[cy*w+cx]
+        if(tid != 0) tile(cx,cy,tid)
+      }
+    }
   }
   
   prio(x,y, isPrio){
@@ -161,6 +300,7 @@ class BgLayer {
     if(_enabled){
       GL.activeTexture(TextureUnit.TEXTURE1)
       GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
+      GL.uniform1f(Gfx.layerShader.locations["pixelation"], _pixel)
       var add = drawPrio ? 1 : 0
       Gfx.layerBuffer.draw(_prio + add)
     }

@@ -7,6 +7,7 @@ uniform lowp vec2 mapSize;
 uniform lowp float pixelscale;
 uniform lowp float prio;
 uniform lowp vec2 tilesize;
+uniform lowp float pixelation;
 
 void main(void) {
   lowp vec4 tile = texture2D(map, (floor(texcoord)+0.5) / mapSize);
@@ -18,6 +19,6 @@ void main(void) {
 
   lowp vec2 oneTile = (texSize / tilesize);
   
-  lowp vec2 offset = fract(texcoord);
+  lowp vec2 offset = fract(texcoord) / pixelation;
   gl_FragColor = texture2D(texture, (tile.xy + offset) / oneTile);
 }

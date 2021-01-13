@@ -164,6 +164,7 @@ class SDL {
   foreign static setSwapInterval(i)
   foreign static ticks
   foreign static getMouseState()
+  foreign static isKeyDown(code)
 }
 
 // static ]+([^\s]+)\s+= { 0 } ([^,\n\s]+),?

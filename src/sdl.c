@@ -259,6 +259,13 @@ static void wren_sdl_SDL_getMouseState_0(WrenVM* vm){
   wrenInsertInList(vm, 0, -1, 1);
 }
 
+static void wren_sdl_SDL_isKeyDown_1(WrenVM* vm){
+  SDL_Keycode keycode = wrenGetSlotDouble(vm, 1);
+  SDL_Scancode scancode = SDL_GetScancodeFromKey(keycode);
+  const Uint8* arr = SDL_GetKeyboardState(NULL);
+  wrenSetSlotBool(vm, 0, arr[scancode]);
+}
+
 void wrt_plugin_init(int handle){
   plugin_id = handle;
   SDL_Init(SDL_INIT_EVERYTHING);
@@ -358,6 +365,7 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("wren-sdl.SDL.pollEvent(_)", wren_sdl_SDL_pollEvent_1);
   wrt_bind_method("wren-sdl.SDL.runLoop(_)", wren_sdl_SDL_runLoop_1);
   wrt_bind_method("wren-sdl.SDL.getMouseState()", wren_sdl_SDL_getMouseState_0);
+  wrt_bind_method("wren-sdl.SDL.isKeyDown(_)", wren_sdl_SDL_isKeyDown_1);
 
   wrt_wren_update_callback(wren_update);
 }
