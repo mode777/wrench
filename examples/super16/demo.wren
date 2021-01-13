@@ -3,7 +3,7 @@ import "random" for Random
 import "images" for Image
 
 Super16.init({
-  "width": 640,
+  "width": 800,
   "height": 480,
   "scale": 2 
 }) {
