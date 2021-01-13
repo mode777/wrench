@@ -206,15 +206,15 @@ class Gfx {
     __bg0.draw(false)
     __bg1.draw(false)
 
-    __spriteShader.use()
-    __spriteBuffer.draw(1)
+    // __spriteShader.use()
+    // __spriteBuffer.draw(1)
 
-    __layerShader.use()
-    __bg0.draw(true)
-    __bg1.draw(true)
+    // __layerShader.use()
+    // __bg0.draw(true)
+    // __bg1.draw(true)
     
-    __spriteShader.use()
-    __spriteBuffer.draw(2)
+    // __spriteShader.use()
+    // __spriteBuffer.draw(2)
     
     // __layerShader.use()
     // __bg2.draw(false)
