@@ -180,8 +180,8 @@ class Gfx {
   static draw(){
     GL.viewport(0,0,__width,__height)
     GL.clearColor(0.5, 0.5, 0.5, 1.0)
-    //GL.enable(EnableCap.BLEND)
-    //GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
+    GL.enable(EnableCap.BLEND)
+    GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT)
     
     GL.activeTexture(TextureUnit.TEXTURE0)

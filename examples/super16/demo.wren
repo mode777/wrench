@@ -3,9 +3,9 @@ import "random" for Random
 import "images" for Image
 
 Super16.init({
-  "width": 400,
-  "height": 240,
-  "scale": 1 
+  "width": 640,
+  "height": 480,
+  "scale": 2 
 }) {
   var random = Random.new(1986)
 
