@@ -3,8 +3,8 @@ import "random" for Random
 import "images" for Image
 
 Super16.init({
-  "width": 400,
-  "height": 240,
+  "width": 800,
+  "height": 480,
   "scale": 2 
 }) {
   var random = Random.new(1986)
