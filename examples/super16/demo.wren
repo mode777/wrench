@@ -41,8 +41,8 @@ Super16.run {
   Gfx.bg2.pos(-Offset[0], -Offset[1])
   Gfx.bg3.pos(Offset[0], -Offset[1])
 
-  Rot = Rot + 0.25
-  for(s in Gfx.sprites){
-    s.rot = Rot+s.id/300
-  }
+  // Rot = Rot + 0.25
+  // for(s in Gfx.sprites){
+  //   s.rot = Rot+s.id/300
+  // }
 }
