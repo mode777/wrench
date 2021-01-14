@@ -65,8 +65,8 @@ var Field
 class Playfield {
   construct new() {
     _w = 10
-    _h = 20
-    Gfx.bg0.tileFill(0,0,40,_h,Gfx.tid(1,0))
+    _h = 17
+    Gfx.bg0.tileFill(0,0,30,_h,Gfx.tid(1,0))
     clear()
   }
 

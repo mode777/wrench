@@ -6,11 +6,11 @@ import "file" for File
 import "gles2-app" for Gles2Application
 import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
 
-var DEFAULT_WIN_WIDTH = 800
-var DEFAULT_WIN_HEIGHT = 480
-var DEFAULT_FB_WIDTH = 640
-var DEFAULT_FB_HEIGHT = 360
-var DEFAULT_FB_TEX_WIDTH = 1024
+var DEFAULT_WIN_WIDTH = 960
+var DEFAULT_WIN_HEIGHT = 540
+var DEFAULT_FB_WIDTH = 480
+var DEFAULT_FB_HEIGHT = 270
+var DEFAULT_FB_TEX_WIDTH = 512
 var DEFAULT_FB_TEX_HEIGHT = 512
 var NUM_SPRITES = 1024
 var NUM_LAYERS = 4
