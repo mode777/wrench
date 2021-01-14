@@ -207,10 +207,30 @@ class TextureUnit {
   static TEXTURE31 { 0x84DF }
 }
 
+class FramebufferTarget {
+  static FRAMEBUFFER { 0x8D40 }
+  static RENDERBUFFER { 0x8D41 }
+}
+
+class FramebufferAttachment {
+  static COLOR_ATTACHMENT0 { 0x8CE0 }
+  static DEPTH_ATTACHMENT { 0x8D00 }
+  static STENCIL_ATTACHMENT { 0x8D20 }
+}
+
+class FramebufferStatus {
+  static FRAMEBUFFER_COMPLETE { 0x8CD5 }
+  static FRAMEBUFFER_INCOMPLETE_ATTACHMENT { 0x8CD6 }
+  static FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT { 0x8CD7 }
+  static FRAMEBUFFER_INCOMPLETE_DIMENSIONS { 0x8CD9 }
+  static FRAMEBUFFER_UNSUPPORTED { 0x8CDD }
+}
+
 foreign class GlShader {}
 foreign class GlProgram {}
 foreign class GlBuffer {}
 foreign class GlTexture {}
+foreign class GlFramebuffer {}
 
 class GL {
   foreign static clear(clearflags)
@@ -272,4 +292,10 @@ class GL {
   foreign static generateMipmap(type)
   foreign static texParameteri(type, parameterType, parameterValue)
   foreign static activeTexture(texUnit)
+
+  static createFramebuffer() { createFramebuffer(GlFramebuffer) }
+  foreign static createFramebuffer(fclass)
+  foreign static bindFramebuffer(target, buffer)
+  foreign static framebufferTexture2D(target, attachmentPoint, textureTarget, texture, level)
+  foreign static checkFramebufferStatus(target)
 }

@@ -137,17 +137,17 @@ static void set_source(WrenVM* vm){
   GLushort y = wrenGetSlotDouble(vm, 3);
   GLushort w = wrenGetSlotDouble(vm, 4);
   GLushort h = wrenGetSlotDouble(vm, 5);
-  buffer->quads[i].corners[0].v = y+h;
   buffer->quads[i].corners[0].u = x;
+  buffer->quads[i].corners[0].v = y+h;
 
-  buffer->quads[i].corners[1].v = y;
   buffer->quads[i].corners[1].u = x;
+  buffer->quads[i].corners[1].v = y;
 
-  buffer->quads[i].corners[2].v = y;
   buffer->quads[i].corners[2].u = x+w;
+  buffer->quads[i].corners[2].v = y;
 
-  buffer->quads[i].corners[3].v = y+h;
   buffer->quads[i].corners[3].u = x+w;
+  buffer->quads[i].corners[3].v = y+h;
 }
 
 static void set_translation(WrenVM* vm){

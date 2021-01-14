@@ -1,7 +1,7 @@
-import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat, BlendFacSrc, BlendFacDst
+import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataType, EnableCap, PrimitveType, ShaderParam, ProgramParam, TextureTarget, TextureParam, TextureWrapMode, TextureMagFilter, TextureMinFilter, TextureUnit, PixelType, PixelFormat, BlendFacSrc, BlendFacDst, FramebufferTarget, FramebufferAttachment, FramebufferStatus
 import "images" for Image
 import "buffers" for FloatArray, Uint16Array, Uint8Array, Buffer
-import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices
+import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices 
 import "file" for File
 import "gles2-app" for Gles2Application
 import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
@@ -64,7 +64,7 @@ class Super16 {
   
   static init(options, fn){
     __app = Gles2Application.new()
-    __app.createWindow(options["width"] || 800, options["height"] || 480, options["title"] || "Super16")
+    __app.createWindow(800, 480, "Super16")
     __app.setVsync(false)
     Sub.init()
     Gfx.init(options)
@@ -144,12 +144,14 @@ class Gfx {
     __height = options["height"] || 480
     __pixelscale = options["scale"] || 2
 
-    var vertCode = File.read("./examples/gles2/vertex_tile.glsl")
-    var fragCode = File.read("./examples/gles2/fragment_tile.glsl")
+    __framebuffer = Framebuffer.new(400, 240)
+
+    var vertCode = File.read("./wren_modules/super16/vertex_tile.glsl")
+    var fragCode = File.read("./wren_modules/super16/fragment_tile.glsl")
     __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "map", "mapSize", "pixelation"])
 
-    fragCode = File.read("./examples/gles2/fragment.glsl")
-    vertCode = File.read("./examples/gles2/vertex.glsl")
+    fragCode = File.read("./wren_modules/super16/fragment.glsl")
+    vertCode = File.read("./wren_modules/super16/vertex.glsl")
     __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "texture"])
 
     __spriteBuffer = SpriteBuffer.new(__spriteShader.program, 1024)
@@ -178,8 +180,9 @@ class Gfx {
   }
 
   static draw(){
-    GL.viewport(0,0,__width,__height)
     GL.clearColor(0.5, 0.5, 0.5, 1.0)
+    //GL.viewport(0,0,__width,__height)
+    __framebuffer.use()
     GL.enable(EnableCap.BLEND)
     GL.blendFunc(BlendFacSrc.SRC_ALPHA, BlendFacDst.ONE_MINUS_SRC_ALPHA)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT)
@@ -229,6 +232,46 @@ class Gfx {
 
     __spriteShader.use()
     __spriteBuffer.draw(4)
+
+    __framebuffer.draw(800, 480)
+  }
+}
+
+class Framebuffer {
+  construct new(w, h){
+    _w = w
+    _h = h
+    _tex = Gles2Util.createTexture(512, 256)
+    _fbo = GL.createFramebuffer()
+    _program = Shader.new(File.read("./wren_modules/super16/vertex_fbo.glsl"), File.read("./wren_modules/super16/fragment_fbo.glsl"), [])
+    _program.use()
+    _position = VertexAttribute.fromList(GL.getAttribLocation(_program.program, "position"), 2, [-1,1, -1,-1, 1,-1, 1,1])
+    _uv = VertexAttribute.fromList(GL.getAttribLocation(_program.program, "uv"), 2, [0,_h/256, 0,0, _w/512,0, _w/512,_h/256])
+    _indices = VertexIndices.fromList([3,2,1,3,1,0])
+    GL.bindFramebuffer(FramebufferTarget.FRAMEBUFFER, _fbo)
+    GL.framebufferTexture2D(FramebufferTarget.FRAMEBUFFER, FramebufferAttachment.COLOR_ATTACHMENT0, TextureTarget.TEXTURE_2D, _tex, 0)
+    var status = GL.checkFramebufferStatus(FramebufferTarget.FRAMEBUFFER)
+    if(status != FramebufferStatus.FRAMEBUFFER_COMPLETE) Fiber.abort("Framebuffer incomplete %(status)")
+    GL.bindFramebuffer(FramebufferTarget.FRAMEBUFFER, null)
+  }
+
+  use(){
+    GL.bindFramebuffer(FramebufferTarget.FRAMEBUFFER, _fbo)
+    Super16.app.checkErrors()
+
+    GL.viewport(0, 0, _w, _h)
+    GL.clear(ClearFlag.COLOR_BUFFER_BIT)
+  }
+
+  draw(w, h){
+    GL.bindFramebuffer(FramebufferTarget.FRAMEBUFFER, null)
+    GL.viewport(0, 0, w, h)
+    _program.use()
+    _position.enable()
+    _uv.enable()
+    GL.activeTexture(TextureUnit.TEXTURE0)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, _tex)
+    _indices.draw()
   }
 }
 

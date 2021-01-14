@@ -283,6 +283,23 @@ DefMethod(activeTexture, 1){
   glActiveTexture(GetEnum(1));
 }
 
+DefMethod(createFramebuffer, 1){
+  GLuint* fb = ReturnForeign(1);
+  glGenFramebuffers(1, fb);
+}
+
+DefMethod(bindFramebuffer, 2){
+  glBindFramebuffer(GetEnum(1), GetGlHandle(2));
+}
+
+DefMethod(framebufferTexture2D, 5){
+  glFramebufferTexture2D(GetEnum(1), GetEnum(2), GetEnum(3), GetGlHandle(4), GetInt(5));
+}
+
+DefMethod(checkFramebufferStatus, 1){
+  ReturnDouble(glCheckFramebufferStatus(GetEnum(1)));
+}
+
 void wrt_plugin_init(int handle){
   plugin_handle = handle;
 
@@ -335,4 +352,8 @@ void wrt_plugin_init(int handle){
   BindMethod(generateMipmap, 1);
   BindMethod(texParameteri, 3);
   BindMethod(activeTexture, 1);
+  BindMethod(createFramebuffer, 1);
+  BindMethod(bindFramebuffer, 2);
+  BindMethod(framebufferTexture2D, 5);
+  BindMethod(checkFramebufferStatus, 1);
 }
