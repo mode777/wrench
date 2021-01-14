@@ -5,7 +5,11 @@ import "random" for Random
 var CoreLoop = Fn.new {
   var gameover = false
   var random = Random.new()
-  var speed = 10
+  var speeds = [2]
+  var cspeed = 0
+  var lines = 0
+  var level = 0
+  var score = 0
   
   while(true){
     while(!gameover){
@@ -17,7 +21,7 @@ var CoreLoop = Fn.new {
         break
       }
 
-      t.startDropping(speed)
+      t.startDropping(speeds[level])
 
       var delay = 0
       var buttonReleased = true
@@ -32,7 +36,7 @@ var CoreLoop = Fn.new {
         if(delay == 0 || dirReleased){
           if(Input.left) t.move(-1,0)
           if(Input.right) t.move(1,0)
-          delay = 4
+          delay = 5
         } else {
           delay = delay - 1
         }
@@ -61,14 +65,14 @@ var Field
 class Playfield {
   construct new() {
     _w = 10
-    _h = 15
-    Gfx.bg0.tileFill(0,0,25,15,Gfx.tid(1,0))
+    _h = 20
+    Gfx.bg0.tileFill(0,0,40,_h,Gfx.tid(1,0))
     clear()
   }
 
   clear(){
-    Gfx.bg1.tileFill(2,0,10,15,0)
-    Gfx.bg0.tileFill(2,0,10,15,Gfx.tid(2,0))
+    Gfx.bg1.tileFill(2,0,_w,_h,0)
+    Gfx.bg0.tileFill(2,0,_w,_h,Gfx.tid(2,0))
     _data = List.filled(_w * _h, false)
   }
 
@@ -83,11 +87,11 @@ class Playfield {
   }
 
   playGameoverAnimation(){
-    for(y in 14..0){
-      for(x in 0...10){
+    for(y in (_h-1)..0){
+      for(x in 0..._w){
         Gfx.bg1.tile(2+x,y,Gfx.tid(1,0))
       }
-      Sub.wait(1)
+      Sub.wait(3)
     }
   }
 
@@ -224,7 +228,7 @@ class Tetromino {
         } else {
           d = d - 1
         }
-        Sub.step()
+        Sub.wait(3)
       }
     }
   }
@@ -247,7 +251,7 @@ Super16.init {
     0, 1, 0, 0,
     0, 1, 0, 0,
     0, 1, 0, 0
-  ]], Gfx.tid(3,0))
+  ]], Gfx.tid(4,0))
   TetroJ = TetrominoType.new([[
     0, 0, 0, 0,
     1, 1, 1, 0,
@@ -289,7 +293,7 @@ Super16.init {
     0, 1, 0, 0,
     0, 1, 1, 0,
     0, 0, 0, 0
-  ]], Gfx.tid(3,0))
+  ]], Gfx.tid(5,0))
   TetroS = TetrominoType.new([[
     0, 0, 0, 0,
     0, 1, 1, 0,
@@ -300,7 +304,7 @@ Super16.init {
     1, 1, 0, 0,
     0, 1, 0, 0,
     0, 0, 0, 0
-  ]], Gfx.tid(3,0))
+  ]], Gfx.tid(6,0))
   TetroZ = TetrominoType.new([[
     0, 0, 0, 0,
     1, 1, 0, 0,
@@ -311,7 +315,7 @@ Super16.init {
     1, 1, 0, 0,
     1, 0, 0, 0,
     0, 0, 0, 0
-  ]], Gfx.tid(3,0))
+  ]], Gfx.tid(4,1))
   TetroT = TetrominoType.new([[
     0, 0, 0, 0,
     1, 1, 1, 0,
@@ -332,14 +336,14 @@ Super16.init {
     0, 1, 1, 0,
     0, 1, 0, 0,
     0, 0, 0, 0
-  ]], Gfx.tid(3,0))
+  ]], Gfx.tid(5,1))
   TetroO = TetrominoType.new([[
     0, 0, 0, 0,
     0, 1, 1, 0,
     0, 1, 1, 0,
     0, 0, 0, 0
-  ]], Gfx.tid(3,0))
-  TetroTypes = [TetroI,TetroT,TetroO,TetroS,TetroZ,TetroL]
+  ]], Gfx.tid(6,1))
+  TetroTypes = [TetroI,TetroT,TetroO,TetroS,TetroZ,TetroL,TetroJ]
 
   Sub.run(CoreLoop)
 }

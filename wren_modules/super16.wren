@@ -6,6 +6,17 @@ import "file" for File
 import "gles2-app" for Gles2Application
 import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
 
+var DEFAULT_WIN_WIDTH = 800
+var DEFAULT_WIN_HEIGHT = 480
+var DEFAULT_FB_WIDTH = 640
+var DEFAULT_FB_HEIGHT = 360
+var DEFAULT_FB_TEX_WIDTH = 1024
+var DEFAULT_FB_TEX_HEIGHT = 512
+var NUM_SPRITES = 1024
+var NUM_LAYERS = 4
+var LAYER_SIZE = 128
+var VRAM_SIZE = 1024
+
 class Time {
 }
 
@@ -64,8 +75,8 @@ class Super16 {
   
   static init(options, fn){
     __app = Gles2Application.new()
-    __app.createWindow(800, 480, "Super16")
-    __app.setVsync(true)
+    __app.createWindow(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT, "Super16")
+    __app.setVsync(false)
     Sub.init()
     Gfx.init(options)
     fn.call()
@@ -119,8 +130,6 @@ class Gfx {
 
   static layerShader { __layerShader } 
   static spriteShader { __spriteShader } 
-  static pixelScale { __pixelscale }
-  static pixelScale=(v) { __pixelscale=v }
   static spriteBuffer { __spriteBuffer }
   static layerBuffer { __layerBuffer }
   static sprites { __sprites }
@@ -140,11 +149,10 @@ class Gfx {
 
   // internal
   static init(options){
-    __width = options["width"] || 800
-    __height = options["height"] || 480
-    __pixelscale = options["scale"] || 2
+    __width = options["width"] || DEFAULT_WIN_WIDTH
+    __height = options["height"] || DEFAULT_WIN_HEIGHT
 
-    __framebuffer = Framebuffer.new(400, 240)
+    __framebuffer = Framebuffer.new(DEFAULT_FB_WIDTH, DEFAULT_FB_HEIGHT)
 
     var vertCode = File.read("./wren_modules/super16/vertex_tile.glsl")
     var fragCode = File.read("./wren_modules/super16/fragment_tile.glsl")
@@ -154,19 +162,19 @@ class Gfx {
     vertCode = File.read("./wren_modules/super16/vertex.glsl")
     __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "texture"])
 
-    __spriteBuffer = SpriteBuffer.new(__spriteShader.program, 1024)
+    __spriteBuffer = SpriteBuffer.new(__spriteShader.program, NUM_SPRITES)
     __sprites = []
     for(i in 0...__spriteBuffer.count){
       __sprites.add(Sprite.new(i))
     }
-    __layerBuffer = SpriteBuffer.new(__layerShader.program, 4) //16384
-    __bg0 = BgLayer.new(128,128, 0, 2)
-    __bg1 = BgLayer.new(128,128, 1, 4)
-    __bg2 = BgLayer.new(128,128, 2, 6)
-    __bg3 = BgLayer.new(128,128, 3, 8)
+    __layerBuffer = SpriteBuffer.new(__layerShader.program, NUM_LAYERS)
+    __bg0 = BgLayer.new(LAYER_SIZE,LAYER_SIZE, 0, 2)
+    __bg1 = BgLayer.new(LAYER_SIZE,LAYER_SIZE, 1, 4)
+    __bg2 = BgLayer.new(LAYER_SIZE,LAYER_SIZE, 2, 6)
+    __bg3 = BgLayer.new(LAYER_SIZE,LAYER_SIZE, 3, 8)
     __layers = [__bg0, __bg1, __bg2, __bg3]
 
-    __texSize = [1024, 1024]
+    __texSize = [VRAM_SIZE, VRAM_SIZE]
     __texture = Gles2Util.createTexture(__texSize[0], __texSize[1])    
   }
 
@@ -191,19 +199,19 @@ class Gfx {
     GL.bindTexture(TextureTarget.TEXTURE_2D, __texture)
 
     __spriteShader.use()
-    GL.uniform2f(__spriteShader.locations["size"], __width, __height)
+    GL.uniform2f(__spriteShader.locations["size"], __framebuffer.width, __framebuffer.height)
     GL.uniform2f(__spriteShader.locations["texSize"], __texSize[0], __texSize[1])
-    GL.uniform1f(__spriteShader.locations["pixelscale"], __pixelscale)
+    GL.uniform1f(__spriteShader.locations["pixelscale"], 1)
     GL.uniform1i(__spriteShader.locations["texture"], 0)
 
     __layerShader.use()
-    GL.uniform2f(__layerShader.locations["size"], __width, __height)
+    GL.uniform2f(__layerShader.locations["size"], __framebuffer.width, __framebuffer.height)
     GL.uniform2f(__layerShader.locations["texSize"], __texSize[0], __texSize[1])
-    GL.uniform1f(__layerShader.locations["pixelscale"], __pixelscale)
+    GL.uniform1f(__layerShader.locations["pixelscale"], 1)
     GL.uniform2f(__layerShader.locations["tilesize"], 16, 16)
     GL.uniform1i(__layerShader.locations["texture"], 0)
     GL.uniform1i(__layerShader.locations["map"], 1)
-    GL.uniform2f(__layerShader.locations["mapSize"], 128, 128)
+    GL.uniform2f(__layerShader.locations["mapSize"], LAYER_SIZE, LAYER_SIZE)
 
     __layerShader.use()
     __bg0.draw(false)
@@ -233,20 +241,24 @@ class Gfx {
     __spriteShader.use()
     __spriteBuffer.draw(4)
 
-    __framebuffer.draw(800, 480)
+    __framebuffer.draw(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT)
   }
 }
 
 class Framebuffer {
+
+  width { _w }
+  height { _h }
+
   construct new(w, h){
     _w = w
     _h = h
-    _tex = Gles2Util.createTexture(512, 256)
+    _tex = Gles2Util.createTexture(DEFAULT_FB_TEX_WIDTH, DEFAULT_FB_TEX_HEIGHT)
     _fbo = GL.createFramebuffer()
     _program = Shader.new(File.read("./wren_modules/super16/vertex_fbo.glsl"), File.read("./wren_modules/super16/fragment_fbo.glsl"), [])
     _program.use()
     _position = VertexAttribute.fromList(GL.getAttribLocation(_program.program, "position"), 2, [-1,1, -1,-1, 1,-1, 1,1])
-    _uv = VertexAttribute.fromList(GL.getAttribLocation(_program.program, "uv"), 2, [0,_h/256, 0,0, _w/512,0, _w/512,_h/256])
+    _uv = VertexAttribute.fromList(GL.getAttribLocation(_program.program, "uv"), 2, [0,_h/DEFAULT_FB_TEX_HEIGHT, 0,0, _w/DEFAULT_FB_TEX_WIDTH,0, _w/DEFAULT_FB_TEX_WIDTH,_h/DEFAULT_FB_TEX_HEIGHT])
     _indices = VertexIndices.fromList([3,2,1,3,1,0])
     GL.bindFramebuffer(FramebufferTarget.FRAMEBUFFER, _fbo)
     GL.framebufferTexture2D(FramebufferTarget.FRAMEBUFFER, FramebufferAttachment.COLOR_ATTACHMENT0, TextureTarget.TEXTURE_2D, _tex, 0)
@@ -257,8 +269,6 @@ class Framebuffer {
 
   use(){
     GL.bindFramebuffer(FramebufferTarget.FRAMEBUFFER, _fbo)
-    Super16.app.checkErrors()
-
     GL.viewport(0, 0, _w, _h)
     GL.clear(ClearFlag.COLOR_BUFFER_BIT)
   }
