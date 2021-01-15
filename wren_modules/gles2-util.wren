@@ -2,14 +2,16 @@ import "wren-gles2" for GL, ClearFlag, BufferType, BufferHint, ShaderType, DataT
 import "buffers" for FloatArray, Uint16Array
 
 class Gles2Util {
-  static createTexture(w,h){
+  static createTexture(w,h,opt){
     var texture = GL.createTexture()
     GL.bindTexture(TextureTarget.TEXTURE_2D, texture)
     GL.texImage2D(TextureTarget.TEXTURE_2D, 0, PixelFormat.RGBA, w, h, 0, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE)
-    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, TextureMagFilter.NEAREST)
-    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, TextureMinFilter.NEAREST)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MAG_FILTER, opt["interpolate"] ? TextureMagFilter.LINEAR : TextureMagFilter.NEAREST)
+    GL.texParameteri(TextureTarget.TEXTURE_2D, TextureParam.TEXTURE_MIN_FILTER, opt["interpolate"] ? TextureMagFilter.LINEAR : TextureMinFilter.NEAREST)
     return texture 
   }
+
+  static createTexture(w,h){ Gles2Util.createTexture(w,h,{}) }
 
   static compileShader(vertCode, fragCode){
     var vertShader = GL.createShader(ShaderType.VERTEX_SHADER)

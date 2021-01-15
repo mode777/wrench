@@ -8,6 +8,11 @@ import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
 
 var DEFAULT_WIN_WIDTH = 960
 var DEFAULT_WIN_HEIGHT = 540
+// var DEFAULT_WIN_WIDTH = 480
+// var DEFAULT_WIN_HEIGHT = 270
+// var DEFAULT_WIN_WIDTH = 1920
+// var DEFAULT_WIN_HEIGHT = 1080
+
 var DEFAULT_FB_WIDTH = 480
 var DEFAULT_FB_HEIGHT = 270
 var DEFAULT_FB_TEX_WIDTH = 512
@@ -16,6 +21,7 @@ var NUM_SPRITES = 1024
 var NUM_LAYERS = 4
 var LAYER_SIZE = 128
 var VRAM_SIZE = 1024
+var INTERPOLATE_FB = false
 
 class Time {
 }
@@ -156,11 +162,11 @@ class Gfx {
 
     var vertCode = File.read("./wren_modules/super16/vertex_tile.glsl")
     var fragCode = File.read("./wren_modules/super16/fragment_tile.glsl")
-    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "tilesize", "texture", "map", "mapSize", "pixelation"])
+    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "tilesize", "texture", "map", "mapSize", "pixelation", "time"])
 
     fragCode = File.read("./wren_modules/super16/fragment.glsl")
     vertCode = File.read("./wren_modules/super16/vertex.glsl")
-    __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "pixelscale", "texture"])
+    __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "texture"])
 
     __spriteBuffer = SpriteBuffer.new(__spriteShader.program, NUM_SPRITES)
     __sprites = []
@@ -201,17 +207,16 @@ class Gfx {
     __spriteShader.use()
     GL.uniform2f(__spriteShader.locations["size"], __framebuffer.width, __framebuffer.height)
     GL.uniform2f(__spriteShader.locations["texSize"], __texSize[0], __texSize[1])
-    GL.uniform1f(__spriteShader.locations["pixelscale"], 1)
     GL.uniform1i(__spriteShader.locations["texture"], 0)
 
     __layerShader.use()
     GL.uniform2f(__layerShader.locations["size"], __framebuffer.width, __framebuffer.height)
     GL.uniform2f(__layerShader.locations["texSize"], __texSize[0], __texSize[1])
-    GL.uniform1f(__layerShader.locations["pixelscale"], 1)
     GL.uniform2f(__layerShader.locations["tilesize"], 16, 16)
     GL.uniform1i(__layerShader.locations["texture"], 0)
     GL.uniform1i(__layerShader.locations["map"], 1)
     GL.uniform2f(__layerShader.locations["mapSize"], LAYER_SIZE, LAYER_SIZE)
+    GL.uniform1f(__layerShader.locations["time"], SDL.ticks / 1000)
 
     __layerShader.use()
     __bg0.draw(false)
@@ -253,7 +258,7 @@ class Framebuffer {
   construct new(w, h){
     _w = w
     _h = h
-    _tex = Gles2Util.createTexture(DEFAULT_FB_TEX_WIDTH, DEFAULT_FB_TEX_HEIGHT)
+    _tex = Gles2Util.createTexture(DEFAULT_FB_TEX_WIDTH, DEFAULT_FB_TEX_HEIGHT, { "interpolate": INTERPOLATE_FB })
     _fbo = GL.createFramebuffer()
     _program = Shader.new(File.read("./wren_modules/super16/vertex_fbo.glsl"), File.read("./wren_modules/super16/fragment_fbo.glsl"), [])
     _program.use()

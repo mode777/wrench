@@ -36,7 +36,7 @@ var CoreLoop = Fn.new {
         if(delay == 0 || dirReleased){
           if(Input.left) t.move(-1,0)
           if(Input.right) t.move(1,0)
-          delay = 5
+          delay = 7
         } else {
           delay = delay - 1
         }

@@ -6,13 +6,12 @@ uniform vec2 size;
 uniform lowp vec2 texSize;
 uniform lowp float prio;
 uniform lowp vec2 tilesize;
-uniform lowp float pixelscale;
 uniform vec2 offset;
 
 varying vec2 texcoord;
 
 void main(void) {
-    vec2 screensize = (size / tilesize / pixelscale);
+    vec2 screensize = size / tilesize;
     vec2 uv = (coordUv.zw * screensize) - (screensize / 2.0);// - (size / (tilesize * pixelscale * 2.0));
 
     float r = -(scaleRot.z / 10430.0);

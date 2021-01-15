@@ -1,7 +1,6 @@
 attribute vec4 coordUv;
 attribute vec4 scaleRot;
 attribute vec2 trans;
-uniform float pixelscale;
 uniform mediump vec2 texSize;
 
 uniform vec2 size;
@@ -16,8 +15,8 @@ void main(void) {
   float r = (scaleRot.z / 10430.0);
   float s = sin(r);
   float c = cos(r);
-  float sx = scaleRot.x / (4096.0 / pixelscale);
-  float sy = scaleRot.y / (4096.0 / pixelscale);
+  float sx = scaleRot.x / 4096.0;
+  float sy = scaleRot.y / 4096.0;
   float sprio = scaleRot.w;
   float mult = step(prio, sprio) * step(sprio, prio);
   sx *= mult;
@@ -29,8 +28,8 @@ void main(void) {
   float m3 = sy * -s;
   float m4 = sy * c;
   
-  float m6 = (trans.x * pixelscale);
-  float m7 = (trans.y * pixelscale);
+  float m6 = trans.x;
+  float m7 = trans.y;
 
   mat3 transformation = mat3(m0, m1, 0.0, m3, m4, 0.0, m6, m7, 1.0);
   //transformation = mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, m6, m7, 1.0);

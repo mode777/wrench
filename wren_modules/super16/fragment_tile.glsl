@@ -4,13 +4,21 @@ uniform sampler2D map;
 varying lowp vec2 texcoord;
 uniform lowp vec2 texSize;
 uniform lowp vec2 mapSize;
-uniform lowp float pixelscale;
 uniform lowp float prio;
 uniform lowp vec2 tilesize;
 uniform lowp float pixelation;
+uniform lowp float time;
 
 void main(void) {
-  lowp vec4 tile = texture2D(map, (floor(texcoord)+0.5) / mapSize);
+  lowp vec2 inp = texcoord;
+
+  // water wobble
+  inp.x += -sin(gl_FragCoord.y / 50.0 + time);
+  //inp.y += cos(gl_FragCoord.y / 35.0 + time);
+
+  //inp.x *= gl_FragCoord.y / 10.0;
+
+  lowp vec4 tile = texture2D(map, (floor(inp)+0.5) / mapSize);
   tile *= 255.0;
   lowp float uPrio = mod(prio, 2.0);
   lowp float tPrio = tile.z;
@@ -19,6 +27,8 @@ void main(void) {
 
   lowp vec2 oneTile = (texSize / tilesize);
   
-  lowp vec2 offset = fract(texcoord) / pixelation;
-  gl_FragColor = texture2D(texture, (tile.xy + offset) / oneTile);
+  lowp vec2 offset = ((floor(fract(inp) * tilesize) + 0.5) / tilesize) / pixelation;
+  lowp vec2 uv = (tile.xy + offset) / oneTile;
+
+  gl_FragColor = texture2D(texture, uv);
 }
