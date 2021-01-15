@@ -6,8 +6,10 @@ import "file" for File
 import "gles2-app" for Gles2Application
 import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
 
-var DEFAULT_WIN_WIDTH = 960
-var DEFAULT_WIN_HEIGHT = 540
+// var DEFAULT_WIN_WIDTH = 960
+// var DEFAULT_WIN_HEIGHT = 540
+var DEFAULT_WIN_WIDTH = 800
+var DEFAULT_WIN_HEIGHT = 480
 // var DEFAULT_WIN_WIDTH = 480
 // var DEFAULT_WIN_HEIGHT = 270
 // var DEFAULT_WIN_WIDTH = 1920
@@ -21,7 +23,7 @@ var NUM_SPRITES = 1024
 var NUM_LAYERS = 4
 var LAYER_SIZE = 128
 var VRAM_SIZE = 1024
-var INTERPOLATE_FB = false
+var INTERPOLATE_FB = true
 
 class Time {
 }
