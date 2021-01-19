@@ -237,7 +237,7 @@ class Gfx {
     //__spriteShader.use()
     //__spriteBuffer.draw(1)
 
-    __layerShader.use()
+    //__layerShader.use()
     //__bg0.draw(true)
     __bg1.draw(true)
     
