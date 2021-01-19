@@ -208,7 +208,7 @@ static void update(WrenVM* vm){
 
 static void draw(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
-  GLfloat prio = (GLint)wrenGetSlotDouble(vm, 1);
+  GLfloat prio = (GLuint)wrenGetSlotDouble(vm, 1);
 
   glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
   glVertexAttribPointer(buffer->coordUvLoc, 4, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, x));
