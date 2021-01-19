@@ -231,7 +231,7 @@ class Gfx {
     GL.uniform1f(__layerShader.locations["time"], SDL.ticks / 1000)
 
     __layerShader.use()
-    __bg0.draw(false)
+    //__bg0.draw(false)
     __bg1.draw(false)
 
     __spriteShader.use()
@@ -245,15 +245,15 @@ class Gfx {
     __spriteBuffer.draw(2)
     
     __layerShader.use()
-    __bg2.draw(false)
+    //__bg2.draw(false)
     //__bg3.draw(false)
     
     __spriteShader.use()
     __spriteBuffer.draw(3)
     
     __layerShader.use()
-    __bg2.draw(true)
-    __bg3.draw(false)
+    //__bg2.draw(true)
+    //__bg3.draw(false)
 
     __spriteShader.use()
     __spriteBuffer.draw(4)
