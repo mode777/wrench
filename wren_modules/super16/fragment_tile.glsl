@@ -20,10 +20,10 @@ void main(void) {
 
   lowp vec4 tile = texture2D(map, (floor(inp)+0.5) / mapSize);
   tile *= 255.0;
-  // lowp float uPrio = 1.0-mod(prio, 2.0);
-  // lowp float tPrio = tile.z;
-  // lowp float mult = step(0.2, abs(uPrio - tPrio));
-  // tile *= mult;
+  lowp float uPrio = 1.0-mod(prio, 2.0);
+  lowp float tPrio = tile.z;
+  lowp float mult = step(0.2, abs(uPrio - tPrio));
+  tile *= mult;
 
   lowp vec2 oneTile = (texSize / tilesize);
 
