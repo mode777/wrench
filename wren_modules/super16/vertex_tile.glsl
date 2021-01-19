@@ -6,7 +6,6 @@ uniform vec2 size;
 uniform lowp vec2 texSize;
 uniform lowp float prio;
 uniform lowp vec2 tilesize;
-uniform vec2 offset;
 
 varying vec2 texcoord;
 

@@ -19,7 +19,9 @@ Super16.init({
     s.pos(random.int(Gfx.width/2),random.int(Gfx.height/2))
   }
 
-  for(m in Gfx.layers){
+  for(m in 1..1){
+    m = Gfx.bg1
+  //for(m in Gfx.layers){
     for(y in 0...32){
       for(x in 0...32){
         m.tile(x,y,Gfx.tid(x,y))
