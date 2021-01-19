@@ -367,7 +367,7 @@ class BgLayer {
   hasFlag(x,y,flag){ Gfx.hasFlag(flag, this[x,y]) }
   
   prio(x,y, isPrio){
-    _uint8[(y*_w+x)*4+2] = isPrio ? 255 : 0
+    _uint8[(y*_w+x)*4+2] = isPrio ? 1 : 0
   }
   
   update(){
