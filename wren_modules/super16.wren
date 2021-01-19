@@ -241,22 +241,22 @@ class Gfx {
     //__bg0.draw(true)
     __bg1.draw(true)
     
-    __spriteShader.use()
-    __spriteBuffer.draw(2)
+    //__spriteShader.use()
+    //__spriteBuffer.draw(2)
     
-    __layerShader.use()
+    //__layerShader.use()
     //__bg2.draw(false)
     //__bg3.draw(false)
     
-    __spriteShader.use()
-    __spriteBuffer.draw(3)
+    //__spriteShader.use()
+    //__spriteBuffer.draw(3)
     
-    __layerShader.use()
+    //__layerShader.use()
     //__bg2.draw(true)
     //__bg3.draw(false)
 
-    __spriteShader.use()
-    __spriteBuffer.draw(4)
+    //__spriteShader.use()
+    //__spriteBuffer.draw(4)
 
     __framebuffer.draw(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT)
   }

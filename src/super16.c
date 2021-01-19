@@ -217,6 +217,7 @@ static void draw(WrenVM* vm){
   glEnableVertexAttribArray(buffer->coordUvLoc);
   glEnableVertexAttribArray(buffer->scaleRotLoc);
   glEnableVertexAttribArray(buffer->transLoc);
+  printf("Buffer: %p, Loc: %i, Prio: %f\n", buffer, buffer->prioLoc, prio);
   glUniform1f(buffer->prioLoc, prio);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->indexBuffer);
   glDrawElements(GL_TRIANGLES, buffer->count*6, GL_UNSIGNED_SHORT, 0);
