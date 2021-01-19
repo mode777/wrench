@@ -38,10 +38,10 @@ Super16.run {
   Offset[0] = -(Super16.time/1000).sin * 100 
   Offset[1] = (Super16.time/1000).cos * 100
 
-  Gfx.bg0.pos(Offset[0], Offset[1])
+  Gfx.bg0.pos(0, Offset[1])
   //Gfx.bg1.pos(-Offset[0], -Offset[1])
-  Gfx.bg2.pos(-Offset[0], -Offset[1])
-  Gfx.bg3.pos(Offset[0], -Offset[1])
+  Gfx.bg2.pos(-Offset[0], 0)
+  Gfx.bg3.rot(Super16.time/1000)
 
   // Rot = Rot + 0.25
   // for(s in Gfx.sprites){

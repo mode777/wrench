@@ -334,6 +334,10 @@ class BgLayer {
   pos(x,y){
     Gfx.layerBuffer.setTranslation(_id, x, y)
   }
+
+  rot(r){
+    Gfx.layerBuffer.setRotation(_id, r)
+  }
   
   // todo bounds checking
   tile(x,y, tid){
