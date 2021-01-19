@@ -5,16 +5,31 @@ import "random" for Random
 var CoreLoop = Fn.new {
   var gameover = false
   var random = Random.new()
-  var speeds = [2]
-  var cspeed = 0
-  var lines = 0
-  var level = 0
-  var score = 0
+  var speeds = [18,15,13,10,8,6,5,4,3]
+  var scoreMultiplier = [0,40,100,300,1200]
+  
+  Gfx.bg0.pos(0, -16*4)
+  Gfx.bg1.pos(0, -16*4)
+  Gfx.bg2.pos(0, -16*4)
   
   while(true){
+    var lines = 0
+    var level = 0
+    var score = 0
+
+    var startX = Field.x + (Field.w/2).floor -2
+    var startY = Field.y
+
+    var t = Tetromino.new(startX,startY,TetroTypes[random.int(TetroTypes.count)])
+
     while(!gameover){
+      Field.setScore(score)
+      Field.setLevel(level)
+      Field.setLines(lines)
+
       // create a random piece
-      var t = Tetromino.new(3,0,TetroTypes[random.int(TetroTypes.count)])
+      var next = Tetromino.new(startX, startY ,TetroTypes[random.int(TetroTypes.count)])
+      Field.previewTetro(next.type)
       
       if(!t.canDrop){
         gameover = true
@@ -48,8 +63,11 @@ var CoreLoop = Fn.new {
         dirReleased = !(Input.left || Input.right)
         Sub.step()
       }
-      Field.clearLines()
-
+      var linesCleared = Field.clearLines()  
+      lines = lines + linesCleared
+      score = score + (scoreMultiplier[linesCleared] * (level+1)) + t.softDrops
+      level = (lines / 10).floor
+      t = next
     }
 
     Field.playGameoverAnimation()
@@ -63,65 +81,115 @@ var CoreLoop = Fn.new {
 var Field
 
 class Playfield {
+
+  x { _x }
+  y { _y }
+  w { _w }
+  h { _h }
+
   construct new() {
     _w = 10
-    _h = 17
-    Gfx.bg0.tileFill(0,0,30,_h,Gfx.tid(1,0))
+    _h = 20
+    _x = 2
+    _y = 1
+    _clearResult = {}
+    Gfx.bg0.tileFill(0,0,50,50,Tiles.wall)
     clear()
+    putWindow(_x + _w + 1, _y+3, 6, 3)
+    putWindow(_x + _w + 1, _y+6, 6, 3)
+    putWindow(_x + _w + 1, _y+9, 6, 3)
+    putWindow(_x + _w + 1, _y+13, 6, 6)
+  }
+
+  setLevel(n){
+    putNumber(18, _y+10, 4, n)
+  }
+
+  setScore(n){
+    putNumber(18, _y+7, 4, n)
+  }
+
+  setLines(n){
+    putNumber(18, _y+4, 4, n)
+  }
+
+  previewTetro(type){
+    if(_preview) _preview.remove(1,14,_y+14,0)
+    _preview = type
+    _preview.set(1, 14,_y+14,0)
   }
 
   clear(){
-    Gfx.bg1.tileFill(2,0,_w,_h,0)
-    Gfx.bg0.tileFill(2,0,_w,_h,Gfx.tid(2,0))
-    _data = List.filled(_w * _h, false)
-  }
-
-  setTile(x,y,tid){ Gfx.bg1.tile(2+x,y,tid) }
-  getTile(x,y){ Gfx.bg1[2+x,y] }
-  markOccupied(x,y){ _data[y*_w+x] = true }
-  markFree(x,y){ _data[y*_w+x] = false }
-  mark(x,y,b){ _data[y*_w+x] = b }
-  isOccupied(x,y){ 
-    if(x < 0 || x >= _w || y < 0 || y >= _h) return true
-    return _data[y*_w+x] 
+    Gfx.bg1.tileFill(_x,_y,_w,_h,0)
+    Gfx.bg0.tileFill(_x,_y,_w,_h,Tiles.hole)
   }
 
   playGameoverAnimation(){
-    for(y in (_h-1)..0){
-      for(x in 0..._w){
-        Gfx.bg1.tile(2+x,y,Gfx.tid(1,0))
+    for(y in (_y+_h-1).._y){
+      for(x in _x..._x+_w){
+        Gfx.bg1.tile(x,y, Tiles.wall)
       }
       Sub.wait(3)
     }
   }
 
   removeLine(y){
-    for(x in 0..._w){
-      markFree(x,y)
-      setTile(x,y,0)
+    for(x in _x..._x+_w){
+      Gfx.bg1.tile(x,y,Tiles.none)
     }
     Sub.wait(5)
-    for(cy in (y-1)..0){
-      for(x in 0..._w){
-        var tid = getTile(x, cy)
-        var occ = isOccupied(x, cy)
-        setTile(x, cy+1, tid)
-        mark(x, cy+1, occ)
+    for(cy in (y-1).._y){
+      for(x in _x..._x+_w){
+        Gfx.bg1.tile(x,cy+1,Gfx.bg1[x,cy])
       }
     }
   }
 
   clearLines(){
     var lines = []
-    for(y in 0..._h){
+    for(y in _y..._y+_h){
       var count = 0
-      for(x in 0..._w){
-        if(isOccupied(x,y)) count = count + 1    
+      for(x in _x..._x+_w){
+        if(Gfx.bg1.hasFlag(x,y, SOLID)) count = count + 1    
       }
       if(count == _w) lines.add(y)
     }
     for(l in lines){
       removeLine(l)
+    }
+    return lines.count
+  }
+
+  putWindow(x,y,w,h){
+    Gfx.bg0.tileFill(x+1,y+1,w-2,h-2,Tiles.hole)
+    
+    for(cy in y+1...y+h-1){
+      Gfx.bg1.tile(x,cy,Gfx.tid(3,2))
+      Gfx.bg1.tile(x+w-1,cy,Gfx.tid(3,1))
+    }
+    
+    for(cx in x+1...x+w-1){
+      Gfx.bg1.tile(cx,y,Gfx.tid(2,1))
+      Gfx.bg1.tile(cx,y+h-1,Gfx.tid(2,2))
+    }
+    
+    Gfx.bg1.tile(x,y,Gfx.tid(0,1))
+    Gfx.bg1.tile(x+w-1,y,Gfx.tid(1,1))
+    Gfx.bg1.tile(x+w-1,y+h-1,Gfx.tid(1,2))
+    Gfx.bg1.tile(x,y+h-1,Gfx.tid(0,2))
+  }
+
+  putNumber(x,y,digits,num){
+    num = num.floor
+    var bytes = num.toString.bytes
+    for(i in x-digits...x){
+      Gfx.bg1.tile(i,y,Tiles.none)
+    }
+    x = x - bytes.count
+    for(b in bytes){
+      var tid = Gfx.tid(7+b-48,0)
+      Gfx.bg1.tile(x,y,tid)
+      x = x + 1
     }
   }
 }
@@ -149,27 +217,22 @@ class TetrominoType {
     }
   }
 
-  set(x,y,rot){
+  set(layer, x,y,rot){
     forXY(rot) { |cx,cy,v| 
-      if(v != 0) Field.setTile(cx+x, cy+y, _tid) 
+      if(v != 0) Gfx.layers[layer].tile(cx+x, cy+y, _tid) 
     }
   }
-  remove(x,y,rot){
+  remove(layer, x,y,rot){
     forXY(rot) { |cx,cy,v| 
-      if(v != 0) Field.setTile(cx+x, cy+y, 0) 
-    }
-  }
-
-  drop(x,y,rot){
-    forXY(rot) { |cx,cy,v| 
-      if(v != 0) Field.markOccupied(cx+x, cy+y) 
+      if(v != 0) Gfx.layers[layer].tile(cx+x, cy+y, 0) 
     }
   }
 
   fits(x,y,rot){
     var f = true
     forXY(rot) { |cx,cy,v| 
-      if(v != 0 && Field.isOccupied(x+cx,y+cy)) f = false 
+      var solid = Gfx.bg0.hasFlag(x+cx,y+cy, SOLID) || Gfx.bg1.hasFlag(x+cx,y+cy, SOLID)
+      if(v != 0 && solid) f = false 
     }
     return f
   }
@@ -181,6 +244,8 @@ class Tetromino {
   rot { _rot }
   dropped { _dropped }
   skip=(v) { _skip = v }
+  type { _type }
+  softDrops { _softDrops }
 
   construct new(x,y,type){
     _x = x
@@ -193,37 +258,37 @@ class Tetromino {
 
   move(x,y){
     var success = false
+    _type.remove(1, _x, _y, _rot)
     if(_type.fits(_x + x, _y + y, _rot)){
-      _type.remove(_x, _y, _rot)
       _x = _x + x
       _y = _y + y
-      _type.set(_x, _y, _rot)
       success = true
     }
+    _type.set(1, _x, _y, _rot)
     return success
   }
 
   rotate(dir){
     var success = false
     var newRot = (_rot+dir)%4
+    _type.remove(1, _x, _y, _rot)
     if(_type.fits(_x, _y,newRot)){
-      _type.remove(_x, _y, _rot)
       _rot = newRot
-      _type.set(_x, _y, _rot)
       success = true
     }
+    _type.set(1,_x, _y, _rot)
     return success
   }
 
   startDropping(delay){
     var d = delay
+    _softDrops = 0
     Sub.run {
+      _type.set(1,_x,_y,_rot)
       while(!_dropped){
         if(d == 0 || _skip){
-          if(!move(0,1)){
-            _type.drop(_x,_y,_rot)
-            _dropped = true
-          }
+          if(!move(0,1)) _dropped = true
+          if(_skip) _softDrops = _softDrops + 1
           d = delay
         } else {
           d = d - 1
@@ -235,12 +300,33 @@ class Tetromino {
 
 }
 
+var SOLID = Gfx.flag1
+
+class Tiles {
+  static none { 0 }
+  static wall { Gfx.tid(1,0) } 
+  static hole { Gfx.tid(2,0) }
+  static purple { Gfx.tid(3,0) }
+  static yellow { Gfx.tid(4,0) }
+  static blue { Gfx.tid(5,0) }
+  static pink { Gfx.tid(6,0) }
+  static grey { Gfx.tid(6,1) }
+  static brown { Gfx.tid(5,1) }
+  static green { Gfx.tid(4,1) }
+}
+
+
 Super16.init {
   var img = Image.fromFile("assets/tetris.png")
   Gfx.vram(0,0, img)
   img.dispose()
-
+  
+  for(tid in [Tiles.wall, Tiles.purple, Tiles.yellow, Tiles.blue, Tiles.pink, Tiles.grey, Tiles.brown, Tiles.green]){
+    Gfx.setFlag(SOLID, tid)
+  }
+  
   Field = Playfield.new()
+  
   TetroI = TetrominoType.new([[
     0, 0, 0, 0,
     1, 1, 1, 1,
@@ -251,7 +337,7 @@ Super16.init {
     0, 1, 0, 0,
     0, 1, 0, 0,
     0, 1, 0, 0
-  ]], Gfx.tid(4,0))
+  ]], Tiles.yellow)
   TetroJ = TetrominoType.new([[
     0, 0, 0, 0,
     1, 1, 1, 0,
@@ -272,7 +358,7 @@ Super16.init {
     0, 1, 0, 0,
     0, 1, 0, 0,
     0, 0, 0, 0
-  ]], Gfx.tid(3,0))
+  ]], Tiles.purple)
   TetroL = TetrominoType.new([[
     0, 0, 0, 0,
     1, 1, 1, 0,

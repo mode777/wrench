@@ -13,7 +13,7 @@ void main(void) {
   lowp vec2 inp = texcoord;
 
   // water wobble
-  //inp.x += -sin(gl_FragCoord.y / 50.0 + time);
+  inp.x += mod(gl_FragCoord.y, 2.0) * -sin(gl_FragCoord.y / 50.0 + time) + mod(gl_FragCoord.y+1.0, 2.0) * sin(gl_FragCoord.y / 35.0 + time);
   //inp.y += cos(gl_FragCoord.y / 35.0 + time);
 
   //inp.x *= gl_FragCoord.y / 10.0;
@@ -22,12 +22,12 @@ void main(void) {
   tile *= 255.0;
   lowp float uPrio = mod(prio, 2.0);
   lowp float tPrio = tile.z;
-  lowp float mult = step(0.2, abs(uPrio - tPrio));
+  lowp float mult = 1.0-step(0.2, abs(uPrio - tPrio));
   tile *= mult;
 
   lowp vec2 oneTile = (texSize / tilesize);
   
-  lowp vec2 offset = ((floor(fract(inp) * tilesize) + 0.5) / tilesize) / pixelation;
+  lowp vec2 offset = ((floor(fract(inp) * tilesize / pixelation) + 0.5) / tilesize * pixelation);
   lowp vec2 uv = (tile.xy + offset) / oneTile;
 
   gl_FragColor = texture2D(texture, uv);

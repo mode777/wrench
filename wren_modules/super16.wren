@@ -6,10 +6,10 @@ import "file" for File
 import "gles2-app" for Gles2Application
 import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
 
-// var DEFAULT_WIN_WIDTH = 960
-// var DEFAULT_WIN_HEIGHT = 540
-var DEFAULT_WIN_WIDTH = 800
-var DEFAULT_WIN_HEIGHT = 480
+var DEFAULT_WIN_WIDTH = 960
+var DEFAULT_WIN_HEIGHT = 540
+// var DEFAULT_WIN_WIDTH = 800
+// var DEFAULT_WIN_HEIGHT = 480
 // var DEFAULT_WIN_WIDTH = 480
 // var DEFAULT_WIN_HEIGHT = 270
 // var DEFAULT_WIN_WIDTH = 1920
@@ -23,7 +23,7 @@ var NUM_SPRITES = 1024
 var NUM_LAYERS = 4
 var LAYER_SIZE = 128
 var VRAM_SIZE = 1024
-var INTERPOLATE_FB = true
+var INTERPOLATE_FB = false
 
 class Time {
 }
@@ -135,7 +135,15 @@ class Super16 {
 }
 
 class Gfx {
-
+  static flag1 { 0x1 }
+  static flag2 { 0x2 }
+  static flag3 { 0x4 }
+  static flag4 { 0x8 }
+  static flag5 { 0x10 }
+  static flag6 { 0x20 }
+  static flag7 { 0x40 }
+  static flag8 { 0x80 }
+  static flag9 { 0x100 }
   static layerShader { __layerShader } 
   static spriteShader { __spriteShader } 
   static spriteBuffer { __spriteBuffer }
@@ -149,7 +157,9 @@ class Gfx {
   static width { Super16.app.width }
   static height { Super16.app.height }
   static tid(x,y) { (y<<8) | x }
-
+  static setFlag(flag, tid){ __flags[tid] = (__flags[tid] || 0) | flag }
+  static hasFlag(flag, tid){ ((__flags[tid] || 0) & flag) == flag }
+  static flags { __flags }
 
   static vram(x,y,img){
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
@@ -184,6 +194,7 @@ class Gfx {
 
     __texSize = [VRAM_SIZE, VRAM_SIZE]
     __texture = Gles2Util.createTexture(__texSize[0], __texSize[1])    
+    __flags = {}
   }
 
   static update(){
@@ -214,7 +225,6 @@ class Gfx {
     __layerShader.use()
     GL.uniform2f(__layerShader.locations["size"], __framebuffer.width, __framebuffer.height)
     GL.uniform2f(__layerShader.locations["texSize"], __texSize[0], __texSize[1])
-    GL.uniform2f(__layerShader.locations["tilesize"], 16, 16)
     GL.uniform1i(__layerShader.locations["texture"], 0)
     GL.uniform1i(__layerShader.locations["map"], 1)
     GL.uniform2f(__layerShader.locations["mapSize"], LAYER_SIZE, LAYER_SIZE)
@@ -228,7 +238,7 @@ class Gfx {
     __spriteBuffer.draw(1)
 
     __layerShader.use()
-    __bg0.draw(true)
+    //__bg0.draw(true)
     __bg1.draw(true)
     
     __spriteShader.use()
@@ -236,7 +246,7 @@ class Gfx {
     
     __layerShader.use()
     __bg2.draw(false)
-    __bg3.draw(false)
+    //__bg3.draw(false)
     
     __spriteShader.use()
     __spriteBuffer.draw(3)
@@ -308,11 +318,17 @@ class BgLayer {
     _id = id
     _enabled = true
     _prio = prio
-    _tilesize = [16,16]
+    _tw = 16
+    _th = 16
     _pixel = 1
     Gfx.layerBuffer.setShape(id, 0, 0, 2, 2, 1, 1)
     Gfx.layerBuffer.setSource(id, 0, 0, 1,1)
     Gfx.layerBuffer.setPrio(id, prio)
+  }
+
+  tileSize(w,h){
+    _tw = w
+    _th = h
   }
 
   pos(x,y){
@@ -346,6 +362,9 @@ class BgLayer {
       }
     }
   }
+
+  // todo bounds checking
+  hasFlag(x,y,flag){ Gfx.hasFlag(flag, this[x,y]) }
   
   prio(x,y, isPrio){
     _uint8[(y*_w+x)*4+2] = isPrio ? 1 : 0
@@ -361,6 +380,7 @@ class BgLayer {
       GL.activeTexture(TextureUnit.TEXTURE1)
       GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
       GL.uniform1f(Gfx.layerShader.locations["pixelation"], _pixel)
+      GL.uniform2f(Gfx.layerShader.locations["tilesize"], _tw, _th)
       var add = drawPrio ? 1 : 0
       Gfx.layerBuffer.draw(_prio + add)
     }
