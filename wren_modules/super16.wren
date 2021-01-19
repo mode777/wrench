@@ -174,11 +174,11 @@ class Gfx {
 
     var vertCode = File.read("./wren_modules/super16/vertex_tile.glsl")
     var fragCode = File.read("./wren_modules/super16/fragment_tile.glsl")
-    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "tilesize", "texture", "map", "mapSize", "pixelation", "time"])
+    __layerShader = Shader.new(vertCode, fragCode, ["size", "texSize", "tilesize", "texture", "map", "mapSize", "pixelation", "time","prio"])
 
     fragCode = File.read("./wren_modules/super16/fragment.glsl")
     vertCode = File.read("./wren_modules/super16/vertex.glsl")
-    __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "texture"])
+    __spriteShader = Shader.new(vertCode, fragCode, ["size", "texSize", "texture","prio"])
 
     __spriteBuffer = SpriteBuffer.new(__spriteShader.program, NUM_SPRITES)
     __sprites = []
@@ -382,7 +382,8 @@ class BgLayer {
       GL.uniform1f(Gfx.layerShader.locations["pixelation"], _pixel)
       GL.uniform2f(Gfx.layerShader.locations["tilesize"], _tw, _th)
       var add = drawPrio ? 1 : 0
-      Gfx.layerBuffer.draw(_prio + add)
+      GL.uniform1f(Gfx.layerShader.locations["prio"], _prio + add)
+      Gfx.layerBuffer.draw()
     }
   }
 }
@@ -437,5 +438,5 @@ foreign class SpriteBuffer {
   foreign setPrio(i, p)
   foreign getPrio(i)
   foreign update()
-  foreign draw(prio)
+  foreign draw()
 }

@@ -27,7 +27,6 @@ typedef struct {
   GLuint coordUvLoc;
   GLuint scaleRotLoc;
   GLuint transLoc;
-  GLuint prioLoc;
   GLuint quadBuffer;
   GLuint indexBuffer;
   GLuint program;
@@ -74,7 +73,6 @@ static void sprite_buffer_init(WrenVM* vm){
   buffer->coordUvLoc = glGetAttribLocation(program, "coordUv");
   buffer->scaleRotLoc = glGetAttribLocation(program, "scaleRot");
   buffer->transLoc = glGetAttribLocation(program, "trans");
-  buffer->prioLoc = glGetUniformLocation(program, "prio");
 
   buffer->quads = calloc(buffer->count, sizeof(Quad));
 
@@ -208,7 +206,6 @@ static void update(WrenVM* vm){
 
 static void draw(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
-  GLfloat prio = (GLuint)wrenGetSlotDouble(vm, 1);
 
   glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
   glVertexAttribPointer(buffer->coordUvLoc, 4, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, x));
@@ -217,8 +214,6 @@ static void draw(WrenVM* vm){
   glEnableVertexAttribArray(buffer->coordUvLoc);
   glEnableVertexAttribArray(buffer->scaleRotLoc);
   glEnableVertexAttribArray(buffer->transLoc);
-  printf("Buffer: %p, Loc: %i, Prio: %f\n", buffer, buffer->prioLoc, prio);
-  glUniform1f(buffer->prioLoc, prio);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->indexBuffer);
   glDrawElements(GL_TRIANGLES, buffer->count*6, GL_UNSIGNED_SHORT, 0);
 }
@@ -239,7 +234,7 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("super16.SpriteBuffer.setPrio(_,_)", set_prio);
   wrt_bind_method("super16.SpriteBuffer.getPrio(_)", get_prio);
   wrt_bind_method("super16.SpriteBuffer.update()", update);
-  wrt_bind_method("super16.SpriteBuffer.draw(_)", draw);
+  wrt_bind_method("super16.SpriteBuffer.draw()", draw);
   wrt_bind_method("super16.SpriteBuffer.count", count);
 
 }
