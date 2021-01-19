@@ -232,6 +232,7 @@ class Gfx {
 
     __layerShader.use()
     //__bg0.draw(false)
+    System.print(__layerShader.locations)
     __bg1.draw(false)
 
     //__spriteShader.use()
