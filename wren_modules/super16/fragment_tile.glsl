@@ -24,7 +24,7 @@ void main(void) {
   // lowp float tPrio = sign(tile.z);
   // lowp float mult = step(0.2, abs(uPrio - tPrio));
   // tile *= mult;
-  tile *= mod(tile.z, 2.0);
+  tile *= (mod(tile.z, 2.0) + mod(prio, 2.0));
 
   lowp vec2 oneTile = (texSize / tilesize);
 
