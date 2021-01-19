@@ -13,7 +13,7 @@ void main(void) {
   lowp vec2 inp = texcoord;
 
   // water wobble
-  //inp.x += mod(gl_FragCoord.y, 2.0) * -sin(gl_FragCoord.y / 50.0 + time) + mod(gl_FragCoord.y+1.0, 2.0) * sin(gl_FragCoord.y / 35.0 + time);
+  inp.x += mod(gl_FragCoord.y, 2.0) * -sin(gl_FragCoord.y / 50.0 + time) + mod(gl_FragCoord.y+1.0, 2.0) * sin(gl_FragCoord.y / 35.0 + time);
   //inp.y += cos(gl_FragCoord.y / 35.0 + time);
 
   //inp.x *= gl_FragCoord.y / 10.0;
