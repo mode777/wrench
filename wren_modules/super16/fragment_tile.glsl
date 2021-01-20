@@ -20,7 +20,7 @@ void main(void) {
 
   lowp vec4 tile = texture2D(map, (floor(inp)+0.5) / mapSize);
   tile *= 255.0;
-  //tile *= 1.0 - mod(tile.z + prio, 2.0);
+  tile *= 1.0 - mod(tile.z + prio, 2.0);
 
   lowp vec2 oneTile = (texSize / tilesize);
 
