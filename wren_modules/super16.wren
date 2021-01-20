@@ -241,8 +241,8 @@ class Gfx {
     __spriteBuffer.draw()
 
     __layerShader.use()
-    // GL.uniform1f(Gfx.layerShader.locations["prio"], 3.0)
-    // __bg0.draw()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 3.0)
+    __bg0.draw()
     GL.uniform1f(Gfx.layerShader.locations["prio"], 5.0)
     __bg1.draw()
     
@@ -253,8 +253,8 @@ class Gfx {
     __layerShader.use()
     GL.uniform1f(Gfx.layerShader.locations["prio"], 6.0)
     __bg2.draw()
-    // GL.uniform1f(Gfx.layerShader.locations["prio"], 8.0)
-    // __bg3.draw()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 8.0)
+    __bg3.draw()
     
     __spriteShader.use()
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 3)
