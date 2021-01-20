@@ -231,32 +231,44 @@ class Gfx {
     GL.uniform1f(__layerShader.locations["time"], SDL.ticks / 1000)
 
     __layerShader.use()
-    //__bg0.draw(false)
-    //__bg1.draw(false)
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 2.0)
+    __bg0.draw()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 4.0)
+    __bg1.draw()
 
-    //__spriteShader.use()
-    //__spriteBuffer.draw(1)
+    __spriteShader.use()
+    GL.uniform1f(Gfx.spriteShader.locations["prio"], 1)
+    __spriteBuffer.draw()
 
-    //__layerShader.use()
-    //__bg0.draw(true)
-    __bg1.draw(true)
+    __layerShader.use()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 3.0)
+    __bg0.draw()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 5.0)
+    __bg1.draw()
     
-    //__spriteShader.use()
-    //__spriteBuffer.draw(2)
+    __spriteShader.use()
+    GL.uniform1f(Gfx.spriteShader.locations["prio"], 2)
+    __spriteBuffer.draw()
     
-    //__layerShader.use()
-    //__bg2.draw(false)
-    //__bg3.draw(false)
+    __layerShader.use()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 6.0)
+    __bg2.draw()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 8.0)
+    __bg3.draw()
     
-    //__spriteShader.use()
-    //__spriteBuffer.draw(3)
+    __spriteShader.use()
+    GL.uniform1f(Gfx.spriteShader.locations["prio"], 3)
+    __spriteBuffer.draw()
     
-    //__layerShader.use()
-    //__bg2.draw(true)
-    //__bg3.draw(false)
+    __layerShader.use()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 7.0)
+    __bg2.draw()
+    GL.uniform1f(Gfx.layerShader.locations["prio"], 9.0)
+    __bg3.draw()
 
-    //__spriteShader.use()
-    //__spriteBuffer.draw(4)
+    __spriteShader.use()
+    GL.uniform1f(Gfx.spriteShader.locations["prio"], 4)
+    __spriteBuffer.draw()
 
     __framebuffer.draw(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT)
   }
@@ -379,14 +391,12 @@ class BgLayer {
     GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, _w, _h, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, _buffer)
   }
 
-  draw(drawPrio){
+  draw(){
     if(_enabled){
       GL.activeTexture(TextureUnit.TEXTURE1)
       GL.bindTexture(TextureTarget.TEXTURE_2D, _texture)
       GL.uniform1f(Gfx.layerShader.locations["pixelation"], _pixel)
       GL.uniform2f(Gfx.layerShader.locations["tilesize"], _tw, _th)
-      var add = drawPrio ? 1 : 0
-      GL.uniform1f(Gfx.layerShader.locations["prio"], _prio + add)
       Gfx.layerBuffer.draw()
     }
   }

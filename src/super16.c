@@ -29,7 +29,6 @@ typedef struct {
   GLuint transLoc;
   GLuint quadBuffer;
   GLuint indexBuffer;
-  GLuint program;
   Quad* quads;
 } SpriteBuffer;
 
@@ -68,7 +67,6 @@ static void sprite_buffer_init(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(SpriteBuffer));
   GLuint program = *(GLuint*)wrenGetSlotForeign(vm, 1);
 
-  buffer->program = program;
   buffer->count = wrenGetSlotDouble(vm, 2);
   buffer->coordUvLoc = glGetAttribLocation(program, "coordUv");
   buffer->scaleRotLoc = glGetAttribLocation(program, "scaleRot");
