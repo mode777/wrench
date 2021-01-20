@@ -35,7 +35,7 @@ void main(void) {
     float aPrio = floor(scaleRot.w / 2.0);
     float uPrio = floor(prio / 2.0);
     // float mult = step(aPrio, uPrio) * step(uPrio, aPrio);
-    float mult = aPrio == 2.0 ? 1.0 : 0.0;
+    float mult = scaleRot.w == 4.0 ? 1.0 : 0.0;
     vec2 xy = mult * coordUv.xy * vec2(1.0, -1.0);
     gl_Position = vec4(xy, 0.0, 1.0);
 }
