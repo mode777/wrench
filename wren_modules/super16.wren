@@ -84,7 +84,7 @@ class Super16 {
   static init(options, fn){
     __app = Gles2Application.new()
     __app.createWindow(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT, "Super16")
-    __app.setVsync(false)
+    __app.setVsync(true)
     Sub.init()
     Gfx.init(options)
     fn.call()
