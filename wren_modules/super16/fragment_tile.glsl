@@ -24,7 +24,7 @@ void main(void) {
   tile *= 255.0;
   tile *= 1.0 - floor(mod(tile.z + prio + 0.1, 2.0));
 
-  lowp vec2 oneTile = (texSize / tilesize);
+  lowp float oneTile = 64.0;
 
   lowp vec2 offset = ((floor(fract(inp) * tilesize / pixelation) + 0.5) / tilesize * pixelation);
   lowp vec2 uv = (tile.xy + offset) / oneTile;
