@@ -202,7 +202,7 @@ class Gfx {
     for(i in 0...__glyphBuffer.count){
       __glyphs.add(Sprite.new(i))
     }
-    __fnt0 = Font.new(__spriteBuffer)
+    __fnt0 = Font.new(__glyphBuffer)
     __fnt1 = Font.new(__glyphBuffer)
     __fnt2 = Font.new(__glyphBuffer)
     __fnt3 = Font.new(__glyphBuffer)
@@ -294,7 +294,7 @@ class Gfx {
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 4)
     __spriteBuffer.draw()
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 1)
-    //__glyphBuffer.draw()
+    __glyphBuffer.draw()
 
     __framebuffer.draw(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT)
   }
