@@ -291,8 +291,8 @@ class Gfx {
     __bg3.draw()
 
     __spriteShader.use()
-    GL.uniform1f(Gfx.spriteShader.locations["prio"], 4)
-    __spriteBuffer.draw()
+    // GL.uniform1f(Gfx.spriteShader.locations["prio"], 4)
+    // __spriteBuffer.draw()
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 1)
     __glyphBuffer.draw()
 
