@@ -149,7 +149,6 @@ class Gfx {
   static layerShader { __layerShader } 
   static spriteShader { __spriteShader } 
   static spriteBuffer { __spriteBuffer }
-  static glyphBuffer { __glyphBuffer }
   static layerBuffer { __layerBuffer }
   static sprites { __sprites }
   static glyphs { __glyphs }
@@ -196,16 +195,10 @@ class Gfx {
       __sprites.add(Sprite.new(i))
     }
 
-    __activeFont = 0
-    __glyphBuffer = SpriteBuffer.new(__spriteShader.program, NUM_GLYPHS)
-    __glyphs = []
-    for(i in 0...__glyphBuffer.count){
-      __glyphs.add(Sprite.new(i))
-    }
-    __fnt0 = Font.new(__glyphBuffer)
-    __fnt1 = Font.new(__glyphBuffer)
-    __fnt2 = Font.new(__glyphBuffer)
-    __fnt3 = Font.new(__glyphBuffer)
+    __fnt0 = Font.new(__spriteBuffer)
+    __fnt1 = Font.new(__spriteBuffer)
+    __fnt2 = Font.new(__spriteBuffer)
+    __fnt3 = Font.new(__spriteBuffer)
     __fonts = [__fnt0,__fnt1,__fnt2,__fnt3]
 
     __layerBuffer = SpriteBuffer.new(__layerShader.program, NUM_LAYERS)
@@ -221,12 +214,11 @@ class Gfx {
   }
 
   static update(){
-    // __bg0.update()
-    // __bg1.update()
-    // __bg2.update()
-    // __bg3.update()
+    __bg0.update()
+    __bg1.update()
+    __bg2.update()
+    __bg3.update()
     __layerBuffer.update()
-    //__glyphBuffer.update()
     __spriteBuffer.update()
   }
 
@@ -294,7 +286,6 @@ class Gfx {
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 4)
     __spriteBuffer.draw()
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 1)
-    //__glyphBuffer.draw()
 
     __framebuffer.draw(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT)
   }
