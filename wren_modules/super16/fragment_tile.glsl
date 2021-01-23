@@ -19,10 +19,13 @@ void main(void) {
   //inp.x *= gl_FragCoord.y / 10.0;
 
   lowp vec4 tile = texture2D(map, (floor(inp)+0.5) / mapSize);
-  //if((tile.x + tile.y) == 0.0) discard;
-
   tile *= 255.0;
-  tile *= 1.0 - floor(mod(tile.z + prio + 0.1, 2.0));
+
+  // don't draw pixel if...
+  // ...tileid is zero
+  lowp float mult = step(0.1, tile.x+tile.y);
+  // ...or tile has wrong priority
+  mult *= 1.0 - floor(mod(tile.z + prio + 0.1, 2.0));
 
   lowp vec2 oneTile = (texSize / tilesize);
 
@@ -30,4 +33,6 @@ void main(void) {
   lowp vec2 uv = (tile.xy + offset) / oneTile;
 
   gl_FragColor = texture2D(texture, uv);
+  gl_FragColor.a *= mult;
+
 }
