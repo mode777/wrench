@@ -226,7 +226,7 @@ class Gfx {
     __bg2.update()
     __bg3.update()
     __layerBuffer.update()
-    __glyphBuffer.update()
+    //__glyphBuffer.update()
     __spriteBuffer.update()
   }
 
