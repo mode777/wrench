@@ -221,10 +221,10 @@ class Gfx {
   }
 
   static update(){
-    __bg0.update()
-    __bg1.update()
-    __bg2.update()
-    __bg3.update()
+    // __bg0.update()
+    // __bg1.update()
+    // __bg2.update()
+    // __bg3.update()
     __layerBuffer.update()
     //__glyphBuffer.update()
     __spriteBuffer.update()
