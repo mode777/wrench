@@ -21,7 +21,7 @@ void main(void) {
   lowp vec4 tile = texture2D(map, (floor(inp)+0.5) * 0.0078125);
 
   tile *= 255.0;
-  tile *= 1.0 - floor(mod(tile.z + prio + 0.1, 2.0));
+  lowp float mul = step(0.1, tile.x + tile.y) * (1.0 - floor(mod(tile.z + prio + 0.1, 2.0)));
 
   //lowp vec2 oneTile = (texSize / tilesize);
   lowp float oneTile = 0.015625;
@@ -31,5 +31,5 @@ void main(void) {
   lowp vec2 uv = (tile.xy + offset) * oneTile;
 
   gl_FragColor = texture2D(texture, uv);
-  
+  gl_FragColor.a *= mul;
 }
