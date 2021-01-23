@@ -19,7 +19,7 @@ void main(void) {
   //inp.x *= gl_FragCoord.y / 10.0;
 
   lowp vec4 tile = texture2D(map, (floor(inp)+0.5) / mapSize);
-  if((tile.x + tile.y) == 0.0) discard;
+  //if((tile.x + tile.y) == 0.0) discard;
 
   tile *= 255.0;
   tile *= 1.0 - floor(mod(tile.z + prio + 0.1, 2.0));
