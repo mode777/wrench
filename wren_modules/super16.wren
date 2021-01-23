@@ -20,7 +20,7 @@ var DEFAULT_FB_WIDTH = 480
 var DEFAULT_FB_HEIGHT = 270
 var DEFAULT_FB_TEX_WIDTH = 512
 var DEFAULT_FB_TEX_HEIGHT = 512
-var NUM_SPRITES = 1024
+var NUM_SPRITES = 2048
 var NUM_GLYPHS = 1024
 var NUM_LAYERS = 4
 var LAYER_SIZE = 128
@@ -294,7 +294,7 @@ class Gfx {
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 4)
     __spriteBuffer.draw()
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 1)
-    __glyphBuffer.draw()
+    //__glyphBuffer.draw()
 
     __framebuffer.draw(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT)
   }
