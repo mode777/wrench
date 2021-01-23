@@ -27,7 +27,7 @@ void main(void) {
   lowp float oneTile = 0.015625;
 
   //lowp vec2 offset = ((floor(fract(inp) * tilesize / pixelation) + 0.5) / tilesize * pixelation);
-  lowp vec2 offset = ((floor(fract(inp) * tilesize) + 0.5) / tilesize);
+  lowp vec2 offset = ((floor(fract(inp) * tilesize) + 0.5) * 0.0625);
   lowp vec2 uv = (tile.xy + offset) * oneTile;
 
   gl_FragColor = texture2D(texture, uv);
