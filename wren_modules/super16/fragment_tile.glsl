@@ -22,6 +22,7 @@ void main(void) {
 
   tile *= 255.0;
   lowp float mul = step(0.1, tile.x + tile.y) * (1.0 - floor(mod(tile.z + prio + 0.1, 2.0)));
+  tile *= mul;
 
   //lowp vec2 oneTile = (texSize / tilesize);
   lowp float oneTile = 0.015625;
