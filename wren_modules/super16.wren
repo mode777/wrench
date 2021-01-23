@@ -5,6 +5,7 @@ import "gles2-util" for Gles2Util, VertexAttribute, VertexIndices
 import "file" for File
 import "gles2-app" for Gles2Application
 import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
+import "named-tuple" for NamedTuple
 
 var DEFAULT_WIN_WIDTH = 960
 var DEFAULT_WIN_HEIGHT = 540
@@ -20,6 +21,7 @@ var DEFAULT_FB_HEIGHT = 270
 var DEFAULT_FB_TEX_WIDTH = 512
 var DEFAULT_FB_TEX_HEIGHT = 512
 var NUM_SPRITES = 1024
+var NUM_GLYPHS = 1024
 var NUM_LAYERS = 4
 var LAYER_SIZE = 128
 var VRAM_SIZE = 1024
@@ -84,7 +86,7 @@ class Super16 {
   static init(options, fn){
     __app = Gles2Application.new()
     __app.createWindow(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT, "Super16")
-    __app.setVsync(true)
+    __app.setVsync(false)
     Sub.init()
     Gfx.init(options)
     fn.call()
@@ -147,8 +149,15 @@ class Gfx {
   static layerShader { __layerShader } 
   static spriteShader { __spriteShader } 
   static spriteBuffer { __spriteBuffer }
+  static glyphBuffer { __glyphBuffer }
   static layerBuffer { __layerBuffer }
   static sprites { __sprites }
+  static glyphs { __glyphs }
+  static fonts { __fonts }
+  static fnt0 { __fnt0 }
+  static fnt1 { __fnt1 }
+  static fnt2 { __fnt2 }
+  static fnt3 { __fnt3 }
   static layers { __layers }
   static bg0 { __bg0 }
   static bg1 { __bg1 }
@@ -162,7 +171,8 @@ class Gfx {
   static flags { __flags }
 
   static vram(x,y,img){
-    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, 0, 0, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
+    GL.bindTexture(TextureTarget.TEXTURE_2D, __texture)
+    GL.texSubImage2D(TextureTarget.TEXTURE_2D, 0, x, y, img.width, img.height, PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, img.buffer)
   }
 
   // internal
@@ -185,6 +195,19 @@ class Gfx {
     for(i in 0...__spriteBuffer.count){
       __sprites.add(Sprite.new(i))
     }
+
+    __activeFont = 0
+    __glyphBuffer = SpriteBuffer.new(__spriteShader.program, NUM_GLYPHS)
+    __glyphs = []
+    for(i in 0...__glyphBuffer.count){
+      __glyphs.add(Sprite.new(i))
+    }
+    __fnt0 = Font.new(__spriteBuffer)
+    __fnt1 = Font.new(__glyphBuffer)
+    __fnt2 = Font.new(__glyphBuffer)
+    __fnt3 = Font.new(__glyphBuffer)
+    __fonts = [__fnt0,__fnt1,__fnt2,__fnt3]
+
     __layerBuffer = SpriteBuffer.new(__layerShader.program, NUM_LAYERS)
     __bg0 = BgLayer.new(LAYER_SIZE,LAYER_SIZE, 0, 2)
     __bg1 = BgLayer.new(LAYER_SIZE,LAYER_SIZE, 1, 4)
@@ -203,6 +226,7 @@ class Gfx {
     __bg2.update()
     __bg3.update()
     __layerBuffer.update()
+    __glyphBuffer.update()
     __spriteBuffer.update()
   }
 
@@ -269,9 +293,44 @@ class Gfx {
     __spriteShader.use()
     GL.uniform1f(Gfx.spriteShader.locations["prio"], 4)
     __spriteBuffer.draw()
+    GL.uniform1f(Gfx.spriteShader.locations["prio"], 1)
+    __glyphBuffer.draw()
 
     __framebuffer.draw(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT)
   }
+}
+
+var Rect = NamedTuple.create("Rect", ["x","y","w","h"])
+var RectEmpty = Rect.new(0,0,0,0)
+
+class Font {
+  construct new(buffer){
+    _glyphs = {}
+    _buffer = buffer
+  }
+
+  glyph(codePoint, x, y, w, h){
+    _glyphs[codePoint] = Rect.new(x,y,w,h)
+  }
+
+  text(x,y,start,text){
+    for(cp in text){
+      var rect = sprite(cp, start, x, y)
+      start = start+1
+      x = x+rect.w
+    }
+  }
+
+  sprite(codePoint, id, x, y){
+    var rect = _glyphs[codePoint] || RectEmpty
+    System.print(_glyphs)
+    _buffer.setSource(id, rect.x, rect.y, rect.w, rect.h)
+    _buffer.setShape(id, x, y, rect.w, rect.h, 0, rect.h)
+    _buffer.setPrio(id, 1)
+    return rect
+  }
+
+
 }
 
 class Framebuffer {

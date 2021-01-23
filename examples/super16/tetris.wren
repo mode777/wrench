@@ -1,6 +1,8 @@
 import "super16" for Super16, Gfx, Time, Sub, Input
 import "images" for Image
 import "random" for Random
+import "named-tuple" for NamedTuple
+import "meta" for Meta
 
 var CoreLoop = Fn.new {
   var gameover = false
