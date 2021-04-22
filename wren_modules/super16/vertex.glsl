@@ -1,23 +1,32 @@
 attribute vec4 coordUv;
-attribute vec4 scaleRot;
+attribute vec2 scale;
 attribute vec2 trans;
+attribute float rot;
+attribute vec2 prioIntensity;
+attribute vec4 color;
+
 uniform mediump vec2 texSize;
 
 uniform vec2 size;
 uniform float prio;
 
 varying vec2 texcoord;
+varying vec4 vColor;
+varying float vIntensity;
 
 void main(void) {
+  vColor = color;
+  vIntensity = prioIntensity.y / 255.0;
+
   vec2 uv = coordUv.zw / texSize;
   texcoord = uv; 
 
-  float r = (scaleRot.z / 10430.0);
+  float r = (rot / 10430.0);
   float s = sin(r);
   float c = cos(r);
-  float sx = scaleRot.x / 4096.0;
-  float sy = scaleRot.y / 4096.0;
-  float sprio = scaleRot.w;
+  float sx = scale.x / 4096.0;
+  float sy = scale.y / 4096.0;
+  float sprio = prioIntensity.x;
   float mult = step(prio, sprio) * step(sprio, prio);
   sx *= mult;
   sy *= mult;

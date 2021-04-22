@@ -7,17 +7,17 @@ import "gles2-app" for Gles2Application
 import "wren-sdl" for SDL, SdlEventType, SdlKeyCode
 import "named-tuple" for NamedTuple
 
-// var DEFAULT_WIN_WIDTH = 960
-// var DEFAULT_WIN_HEIGHT = 540
-var DEFAULT_WIN_WIDTH = 800
-var DEFAULT_WIN_HEIGHT = 480
+var DEFAULT_WIN_WIDTH = 960
+var DEFAULT_WIN_HEIGHT = 540
+// var DEFAULT_WIN_WIDTH = 800
+// var DEFAULT_WIN_HEIGHT = 480
 // var DEFAULT_WIN_WIDTH = 480
 // var DEFAULT_WIN_HEIGHT = 270
 // var DEFAULT_WIN_WIDTH = 1920
 // var DEFAULT_WIN_HEIGHT = 1080
 
-var DEFAULT_FB_WIDTH = 400
-var DEFAULT_FB_HEIGHT = 240
+var DEFAULT_FB_WIDTH = 480
+var DEFAULT_FB_HEIGHT = 270
 var DEFAULT_FB_TEX_WIDTH = 512
 var DEFAULT_FB_TEX_HEIGHT = 512
 var NUM_SPRITES = 1024
@@ -44,8 +44,11 @@ class Input {
 }
 
 class Sub {
-  static running { __subs.count }
-  
+  static current { __current }
+  static current=(v) { __current=v }
+  static parent { __current.parent }
+  static root { __root }
+
   static wait(loops){
     if(loops == 0) return Fiber.yield()
     var c = 0
@@ -55,60 +58,119 @@ class Sub {
     }
   }
   static step() { Fiber.yield() }
+  static waitFor(fn) { 
+    while(!fn.call()) { 
+      Fiber.yield() 
+    } 
+  }
+
 
   static init(){
-    __subs = []
-    __delete = []
+    __currentId = 0
   }
 
   static update(){
-    for(i in 0...__subs.count){
-      __subs[i].call()
-      if(__subs[i].isDone) __delete.add(i)
-    }
-    for(i in __delete){
-      __subs.removeAt(i)
-    }
-    __delete.clear()
+    __root.update()
   }
   
   static run(fn) {
-    var f = Fiber.new(fn)
-    __subs.add(f)
+    var sub = Sub.new(fn, __current)
+    if(sub.parent == null) __root = sub
+    return sub
+  }
+
+  static runLoop(fn){
+    return Sub.run {
+      while(true){
+        fn.call()
+        Sub.step()
+      }
+    }
+  }
+
+  fiber { _fiber }
+  parent { _parent }
+  children { _children }
+  isDone { _isDone }
+  isPaused { _isPaused }
+  id { _id }
+
+  construct new(fn, parent){
+    _fiber = fn is Fiber ? fn : Fiber.new(fn)
+    _parent = parent
+    __currentId = __currentId + 1
+    _id = __currentId
+    _children = []
+    _isDone = false
+    _isPaused = false
+    _delete = []
+    if(_parent) _parent.children.add(this)
+  }
+
+  addChild(sub){
+    _children.add(sub)
+  }
+
+  togglePause(){
+    _isPaused = !_isPaused
+  }
+
+  stop(){
+    _isDone = true
+  }
+
+  update(){
+    if(_isPaused){ 
+      return 
+    }
+    if(_isDone){ 
+      return
+    }
+    Sub.current = this
+    _fiber.call()
+    _isDone = _fiber.isDone
+    for(i in 0..._children.count){
+      _children[i].update()
+      if(_children[i].isDone) _delete.insert(0,i)
+    }
+    for(i in _delete){
+      _children.removeAt(i)
+    }
+    _delete.clear()
+  }
+
+  await(){
+    while(!isDone){
+      Fiber.yield()
+    }
   }
 }
 
 class Super16 {
   static app { __app }
-  static init(fn){ Super16.init({}, fn) }
   static time { SDL.ticks }
   
-  static init(options, fn){
+  static init(){ Super16.init({}) }
+  static init(options){
     __app = Gles2Application.new()
     __app.createWindow(DEFAULT_WIN_WIDTH, DEFAULT_WIN_HEIGHT, "Super16")
-    __app.setVsync(false)
+    __app.setVsync(true)
     Sub.init()
     Gfx.init(options)
-    fn.call()
   }
 
-  static run() { Super16.run(null) }
+  static start(fn){
+    Super16.init()
+    Sub.run(fn)
+    Super16.run()
+  }
 
-  static run(fn){
+  static run(){
     __quit = false
     __frames = 0
     __frameTime = 0
 
-    if(fn){
-      Sub.run {
-        while(true){
-          fn.call()
-          Fiber.yield()
-        }
-      }
-    }
-
-    while(!__quit && Sub.running > 0){
+    while(!__quit && !Sub.root.isDone){
       __time = SDL.ticks
       var ev = null
       while(ev = __app.poll()){
@@ -135,6 +197,8 @@ class Super16 {
   }
 
 }
+
+var Vec2 = NamedTuple.create("Vec2", ["x","y"])
 
 class Gfx {
   static flag1 { 0x1 }
@@ -165,6 +229,11 @@ class Gfx {
   static width { Super16.app.width }
   static height { Super16.app.height }
   static tid(x,y) { (y<<8) | x }
+  static xy(tid) {
+    __vec2.x = tid & 0xFF
+    __vec2.y = (tid>>8) & 0xFF
+    return __vec2
+  }
   static setFlag(flag, tid){ __flags[tid] = (__flags[tid] || 0) | flag }
   static hasFlag(flag, tid){ ((__flags[tid] || 0) & flag) == flag }
   static flags { __flags }
@@ -176,6 +245,7 @@ class Gfx {
 
   // internal
   static init(options){
+    __vec2 = Vec2.new(0,0)
     __width = options["width"] || DEFAULT_WIN_WIDTH
     __height = options["height"] || DEFAULT_WIN_HEIGHT
 
@@ -295,33 +365,47 @@ var Rect = NamedTuple.create("Rect", ["x","y","w","h"])
 var RectEmpty = Rect.new(0,0,0,0)
 
 class Font {
+  
+  space { _space }
+  space=(v) { _space = v }
+  
   construct new(buffer){
     _glyphs = {}
     _buffer = buffer
+    _space = 0
   }
 
   glyph(codePoint, x, y, w, h){
     _glyphs[codePoint] = Rect.new(x,y,w,h)
   }
 
-  text(x,y,start,text){
+  text(x,y,start,text, prio){
     for(cp in text){
-      var rect = sprite(cp, start, x, y)
+      if(cp == " ") {
+        x = x + _space
+        continue
+      }
+      var rect = sprite(cp, start, x, y, prio)
       start = start+1
       x = x+rect.w
     }
+    return start
   }
 
-  sprite(codePoint, id, x, y){
+  text(x,y,start,txt) { text(x,y,start,txt,1) }
+
+  clear(){
+    _glyphs = {}
+  }
+
+  sprite(codePoint, id, x, y, prio){
     var rect = _glyphs[codePoint] || RectEmpty
-    System.print(_glyphs)
     _buffer.setSource(id, rect.x, rect.y, rect.w, rect.h)
-    _buffer.setShape(id, x, y, rect.w, rect.h, 0, rect.h)
-    _buffer.setPrio(id, 1)
+    _buffer.setShape(id, 0, 0, rect.w, rect.h, 0, rect.h)
+    _buffer.setTranslation(id, x, y)
+    _buffer.setPrio(id, prio)
     return rect
   }
-
-
 }
 
 class Framebuffer {
@@ -400,9 +484,22 @@ class BgLayer {
   rot(r){
     Gfx.layerBuffer.setRotation(_id, r)
   }
+
+  int(i){
+    Gfx.layerBuffer.setIntensity(_id,i)
+  }
+
+  color(r,g,b,a){
+    Gfx.layerBuffer.setColor(_id,r,g,b,a)
+  }
+
+  opacity(o){
+    Gfx.layerBuffer.setOpacity(_id,o)
+  }
   
   // todo bounds checking
   tile(x,y, tid){
+    if(tid == null) Fiber.abort("TID is null")
     var offset = (y*_w+x)*2
     _uint16[offset] = tid
   }
@@ -483,9 +580,40 @@ class Sprite {
     Gfx.spriteBuffer.setShape(_id, 0, 0, w, h, ox, oy)
     Gfx.spriteBuffer.setSource(_id, sx, sy, w, h)
   }
+  setTid(tid, size, ox, oy){
+    var v2 = Gfx.xy(tid)
+    set(size, size, v2.x*size, v2.y*size, ox, oy)
+  }
+  setTid(tid, size){
+    setTid(tid, size, size/2, size/2)
+  }
 
   pos(x,y){
     Gfx.spriteBuffer.setTranslation(_id, x,y)
+  }
+
+  mov(x,y){
+    Gfx.spriteBuffer.offsetTranslation(_id, x,y)
+  }
+
+  rot(r){
+    Gfx.spriteBuffer.offsetRotation(_id,r)
+  }
+
+  scale(x,y){
+    Gfx.spriteBuffer.setScale(_id, x, y)
+  }
+
+  int(i){
+    Gfx.spriteBuffer.setIntensity(_id, i)
+  }
+
+  color(r,g,b){
+    Gfx.spriteBuffer.setColor(_id, r,g,b)
+  }
+
+  opacity(o){
+    Gfx.spriteBuffer.setOpacity(_id, o)
   }
 }
 
@@ -497,9 +625,15 @@ foreign class SpriteBuffer {
   foreign setShape(i,x, y, w, h, ox, oy)
   foreign setSource(i, x, y, w, h)
   foreign setTranslation(i, x, y)
+  foreign offsetTranslation(i, x, y)
   foreign setRotation(i, r)
+  foreign offsetRotation(i, r)
   foreign setScale(i, x, y)
+  foreign offsetScale(i, x, y)
   foreign setPrio(i, p)
+  foreign setColor(i,r,g,b)
+  foreign setOpacity(i,o)
+  foreign setIntensity(i,int)
   foreign getPrio(i)
   foreign update()
   foreign draw()

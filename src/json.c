@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <jsmn.h>
+#include <jsmn_string.h>
 
 #define pgl_wren_new(vm, T) (T*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(T));
 
@@ -71,16 +72,18 @@ double pglJsonGetDoubleVal(PGLJSONParser* parser){
 }
 
 char* pglJsonGetStringVal(PGLJSONParser* parser){
-  int start = parser->token.start;
-  int size = parser->token.end - start;
+  // int start = parser->token.start;
+  // int size = parser->token.end - start;
 
-  char * buffer = malloc(size + 1);
+  // char * buffer = malloc(size + 1);
 
-  strncpy(buffer, (parser->content + start), size);
+  // strncpy(buffer, (parser->content + start), size);
 
-  buffer[size] = 0;
+  // buffer[size] = 0;
 
-  return buffer;
+  // return buffer;
+
+  return jsmn_string(parser->content, &parser->token);
 }
 
 size_t pglJsonGetChildTokens(PGLJSONParser* parser) {

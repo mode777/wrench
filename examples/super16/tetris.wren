@@ -1,12 +1,84 @@
 import "super16" for Super16, Gfx, Time, Sub, Input
+import "super16-font" for FontLoader
 import "images" for Image
 import "random" for Random
 import "named-tuple" for NamedTuple
-import "meta" for Meta
+
+var Rand = Random.new()
+
+class Pause {
+  construct new(coreSub){
+    _core = coreSub
+    Gfx.bg3.tileFill(0,0,50,50,Gfx.tid(1,0))
+    Gfx.bg3.int(192)
+    Gfx.bg3.opacity(0)
+    Gfx.fnt0.text(100,120,900,"PAUSED", 4)
+    for(i in 0..."PAUSED".count){
+      Gfx.sprites[i+900].pos(170+i*24, 130)
+      Gfx.sprites[i+900].scale(3,3)
+      Gfx.sprites[i+900].prio = 0
+    }
+  }
+
+  run(){ 
+    return Sub.runLoop {
+      Sub.waitFor { Input.start }  
+      Sub.waitFor { !Input.start }  
+      _core.togglePause() 
+      
+      fadeIn()
+
+      var animation = Sub.runLoop {
+        for(i in 0..."PAUSED".count){
+          Gfx.sprites[i+900].pos(170+i*24, 130 + (Super16.time/150 + i).sin * 10 )
+        }
+      }
+      var animation2 = Sub.runLoop {
+        for(i in 0...16){
+          Gfx.bg3.pos(-16+i,-16+i)
+          Sub.wait(2)
+        }
+      }
+      
+      Sub.waitFor { Input.start }
+      animation.stop()
+      animation2.stop()
+
+      fadeOut()
+
+      _core.togglePause()
+    }
+  }
+
+  fadeIn(){
+    var opacity = 0
+    while(opacity < 255) {
+      Gfx.bg3.opacity(opacity)
+      Sub.step()
+      opacity = opacity + 255/16
+    }
+    Gfx.bg3.opacity(255)
+    for(i in 0..."PAUSED".count){
+      Gfx.sprites[i+900].prio = 4
+    }
+  }
+
+  fadeOut(){
+    for(i in 0..."PAUSED".count){
+      Gfx.sprites[i+900].prio = 0
+    }
+    var opacity = 255
+    while(opacity > 0) {
+      Gfx.bg3.opacity(opacity)
+      Sub.step()
+      opacity = opacity - 255/16
+    }
+    Gfx.bg3.opacity(0)
+  }
+}
 
 var CoreLoop = Fn.new {
   var gameover = false
-  var random = Random.new()
   var speeds = [18,15,13,10,8,6,5,4,3]
   var scoreMultiplier = [0,40,100,300,1200]
   
@@ -22,7 +94,8 @@ var CoreLoop = Fn.new {
     var startX = Field.x + (Field.w/2).floor -2
     var startY = Field.y
 
-    var t = Tetromino.new(startX,startY,TetroTypes[random.int(TetroTypes.count)])
+    var t = Tetromino.new(startX,startY,TetroTypes[Rand.int(TetroTypes.count)])
+    //var t = Tetromino.new(startX,startY,TetroTypes[0])
 
     while(!gameover){
       Field.setScore(score)
@@ -30,7 +103,8 @@ var CoreLoop = Fn.new {
       Field.setLines(lines)
 
       // create a random piece
-      var next = Tetromino.new(startX, startY ,TetroTypes[random.int(TetroTypes.count)])
+      var next = Tetromino.new(startX, startY ,TetroTypes[Rand.int(TetroTypes.count)])
+      //var next = Tetromino.new(startX, startY ,TetroTypes[0])
       Field.previewTetro(next.type)
       
       if(!t.canDrop){
@@ -45,6 +119,7 @@ var CoreLoop = Fn.new {
       var dirReleased = true
       
       while(!t.dropped){
+
         if(Input.down) {
           t.skip = true
         } else {
@@ -82,6 +157,8 @@ var CoreLoop = Fn.new {
 
 var Field
 
+var Brick = NamedTuple.create("Brick", ["id", "vx", "vy","opa"])
+
 class Playfield {
 
   x { _x }
@@ -98,9 +175,26 @@ class Playfield {
     Gfx.bg0.tileFill(0,0,50,50,Tiles.wall)
     clear()
     putWindow(_x + _w + 1, _y+3, 6, 3)
-    putWindow(_x + _w + 1, _y+6, 6, 3)
+    putWindow(_x + _w + 1, _y+6, 8, 3)
     putWindow(_x + _w + 1, _y+9, 6, 3)
     putWindow(_x + _w + 1, _y+13, 6, 6)
+
+    var textX = (_x+_w + 2)*16+4
+    var start = Gfx.fnt0.text(textX,12, 512, "LINES")
+    start = Gfx.fnt0.text(textX,16*3+12, start, "SCORE")
+    start = Gfx.fnt0.text(textX,16*6+12, start, "LEVEL")
+    start = Gfx.fnt0.text(textX,16*10+12, start, "NEXT")
+    _bricks = []
+    _animation = Sub.runLoop {
+      for(i in 0..._bricks.count){
+        var b = _bricks[i]
+        b.vy = b.vy + 0.1
+        b.opa = b.opa - 4
+        Gfx.sprites[b.id].mov(b.vx,b.vy)
+        Gfx.sprites[b.id].rot(0.05)
+        Gfx.sprites[b.id].opacity(b.opa)
+      }
+    }
   }
 
   setLevel(n){
@@ -108,7 +202,7 @@ class Playfield {
   }
 
   setScore(n){
-    putNumber(18, _y+7, 4, n)
+    putNumber(20, _y+7, 6, n)
   }
 
   setLines(n){
@@ -137,7 +231,13 @@ class Playfield {
 
   removeLine(y){
     for(x in _x..._x+_w){
+      Gfx.sprites[_bricks.count].setTid(Gfx.bg1[x,y], 16, 0, 0)
+      Gfx.sprites[_bricks.count].pos(x*16,(y-4)*16)
+      Gfx.sprites[_bricks.count].prio = 2
+      _bricks.add(Brick.new(_bricks.count, x - _w + _x, -Rand.int(4), 255))
+
       Gfx.bg1.tile(x,y,Tiles.none)
+      Sub.step()
     }
     Sub.wait(5)
     for(cy in (y-1).._y){
@@ -148,6 +248,7 @@ class Playfield {
   }
 
   clearLines(){
+    _bricks.clear()
     var lines = []
     for(y in _y..._y+_h){
       var count = 0
@@ -318,9 +419,10 @@ class Tiles {
 }
 
 
-Super16.init {
+Super16.start {
   var img = Image.fromFile("assets/tetris.png")
   Gfx.vram(0,0, img)
+  FontLoader.loadJson("assets/font3.json", Gfx.fnt0, 0, 7*16)
   img.dispose()
   
   for(tid in [Tiles.wall, Tiles.purple, Tiles.yellow, Tiles.blue, Tiles.pink, Tiles.grey, Tiles.brown, Tiles.green]){
@@ -433,6 +535,8 @@ Super16.init {
   ]], Gfx.tid(6,1))
   TetroTypes = [TetroI,TetroT,TetroO,TetroS,TetroZ,TetroL,TetroJ]
 
-  Sub.run(CoreLoop)
+  var coreSub = Sub.run(CoreLoop)
+  var pause = Pause.new(coreSub)
+  pause.run()
+  coreSub.await()
 }
-Super16.run()

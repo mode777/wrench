@@ -271,6 +271,8 @@ static WrenLoadModuleResult load_module_fn(WrenVM* vm, const char* name){
     strcpy(dllbuffer, strbuffer);
     #if defined(_WIN32)
     strcat(dllbuffer, ".dll");
+    #elif defined(__EMSCRIPTEN__)
+    strcat(dllbuffer, ".wasm");
     #elif defined(__unix__)
     strcat(dllbuffer, ".so");
     #endif

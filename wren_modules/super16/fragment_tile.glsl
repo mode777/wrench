@@ -2,6 +2,9 @@ uniform sampler2D texture;
 uniform sampler2D map;
 
 varying lowp vec2 texcoord;
+varying lowp vec4 vColor;
+varying lowp float vIntensity;
+
 uniform lowp vec2 texSize;
 uniform lowp vec2 mapSize;
 uniform lowp float prio;
@@ -27,5 +30,8 @@ void main(void) {
   lowp vec2 offset = ((floor(fract(inp) * tilesize / pixelation) + 0.5) / tilesize * pixelation);
   lowp vec2 uv = (tile.xy + offset) / oneTile;
 
-  gl_FragColor = texture2D(texture, uv);
+  lowp vec4 color = texture2D(texture, uv);
+  color.a *= 1.0-vColor.a;
+  color.rgb = mix(color.rgb, vColor.rgb, vIntensity);
+  gl_FragColor = color;
 }

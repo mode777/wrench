@@ -6,6 +6,12 @@
 int plugin_handle;
 
 typedef struct {
+  GLubyte r;
+  GLubyte g;
+  GLubyte b;
+} Color;
+
+typedef struct a{
   GLshort x;
   GLshort y;
   GLushort u;
@@ -13,9 +19,12 @@ typedef struct {
   GLushort sx;
   GLushort sy;
   GLushort r;
-  GLushort prio;
+  GLubyte prio;
+  GLubyte intensity;
   GLshort tx;
   GLshort ty;
+  Color color;
+  GLubyte opacity;
 } Attribute;
 
 typedef struct {
@@ -25,8 +34,11 @@ typedef struct {
 typedef struct {
   GLuint count;
   GLuint coordUvLoc;
-  GLuint scaleRotLoc;
+  GLuint scaleLoc;
+  GLuint rotLoc;
+  GLuint prioIntensityLoc;
   GLuint transLoc;
+  GLuint colorLoc;
   GLuint quadBuffer;
   GLuint indexBuffer;
   Quad* quads;
@@ -69,8 +81,11 @@ static void sprite_buffer_init(WrenVM* vm){
 
   buffer->count = wrenGetSlotDouble(vm, 2);
   buffer->coordUvLoc = glGetAttribLocation(program, "coordUv");
-  buffer->scaleRotLoc = glGetAttribLocation(program, "scaleRot");
+  buffer->scaleLoc = glGetAttribLocation(program, "scale");
   buffer->transLoc = glGetAttribLocation(program, "trans");
+  buffer->rotLoc = glGetAttribLocation(program, "rot");
+  buffer->prioIntensityLoc = glGetAttribLocation(program, "prioIntensity");
+  buffer->colorLoc = glGetAttribLocation(program, "color");
 
   buffer->quads = calloc(buffer->count, sizeof(Quad));
 
@@ -158,6 +173,18 @@ static void set_translation(WrenVM* vm){
   }  
 }
 
+static void offset_translation(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  GLshort x = wrenGetSlotDouble(vm, 2);
+  GLshort y = wrenGetSlotDouble(vm, 3);
+  for (size_t j = 0; j < 4; j++)
+  {
+    buffer->quads[i].corners[j].tx += x;
+    buffer->quads[i].corners[j].ty += y;
+  }  
+}
+
 static void set_rotation(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
   GLuint i = wrenGetSlotDouble(vm, 1);
@@ -165,6 +192,16 @@ static void set_rotation(WrenVM* vm){
   for (size_t j = 0; j < 4; j++)
   {
     buffer->quads[i].corners[j].r = (GLushort)(r * 10430);
+  }  
+}
+
+static void offset_rotation(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  double r = wrenGetSlotDouble(vm, 2);
+  for (size_t j = 0; j < 4; j++)
+  {
+    buffer->quads[i].corners[j].r += (GLushort)(r * 10430);
   }  
 }
 
@@ -180,13 +217,58 @@ static void set_scale(WrenVM* vm){
   }  
 }
 
+static void offset_scale(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  double sx = wrenGetSlotDouble(vm, 2);
+  double sy = wrenGetSlotDouble(vm, 3);
+  for (size_t j = 0; j < 4; j++)
+  {
+    buffer->quads[i].corners[j].sx += (GLushort)(sx * 4096);
+    buffer->quads[i].corners[j].sy += (GLushort)(sy * 4096);
+  }  
+}
+
 static void set_prio(WrenVM* vm){
   SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
   GLuint i = wrenGetSlotDouble(vm, 1);
-  GLushort p = wrenGetSlotDouble(vm, 2);
+  GLubyte p = wrenGetSlotDouble(vm, 2);
   for (size_t j = 0; j < 4; j++)
   {
     buffer->quads[i].corners[j].prio = p;
+  }
+}
+
+static void set_color(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  GLubyte r = wrenGetSlotDouble(vm, 2);
+  GLubyte g = wrenGetSlotDouble(vm, 3);
+  GLubyte b = wrenGetSlotDouble(vm, 4);
+  Color c = {.r=r, .g=g, .b=b };
+  for (size_t j = 0; j < 4; j++)
+  {
+    buffer->quads[i].corners[j].color = c;
+  }
+}
+
+static void set_opacity(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  GLubyte opacity = wrenGetSlotDouble(vm, 2);
+  for (size_t j = 0; j < 4; j++)
+  {
+    buffer->quads[i].corners[j].opacity = 255-opacity;
+  }
+}
+
+static void set_int(WrenVM* vm){
+  SpriteBuffer* buffer = (SpriteBuffer*)wrenGetSlotForeign(vm, 0);
+  GLuint i = wrenGetSlotDouble(vm, 1);
+  GLubyte intensity = wrenGetSlotDouble(vm, 2);
+  for (size_t j = 0; j < 4; j++)
+  {
+    buffer->quads[i].corners[j].intensity = intensity;
   }
 }
 
@@ -207,11 +289,17 @@ static void draw(WrenVM* vm){
 
   glBindBuffer(GL_ARRAY_BUFFER, buffer->quadBuffer);
   glVertexAttribPointer(buffer->coordUvLoc, 4, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, x));
-  glVertexAttribPointer(buffer->scaleRotLoc, 4, GL_UNSIGNED_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, sx));
+  glVertexAttribPointer(buffer->scaleLoc, 2, GL_UNSIGNED_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, sx));
   glVertexAttribPointer(buffer->transLoc, 2, GL_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, tx));
+  glVertexAttribPointer(buffer->rotLoc, 1, GL_UNSIGNED_SHORT, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, r));
+  glVertexAttribPointer(buffer->prioIntensityLoc, 2, GL_UNSIGNED_BYTE, false, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, prio));
+  glVertexAttribPointer(buffer->colorLoc, 4, GL_UNSIGNED_BYTE, true, sizeof(Attribute), (const GLvoid*)offsetof(Attribute, color));
   glEnableVertexAttribArray(buffer->coordUvLoc);
-  glEnableVertexAttribArray(buffer->scaleRotLoc);
+  glEnableVertexAttribArray(buffer->scaleLoc);
   glEnableVertexAttribArray(buffer->transLoc);
+  glEnableVertexAttribArray(buffer->rotLoc);
+  glEnableVertexAttribArray(buffer->prioIntensityLoc);
+  glEnableVertexAttribArray(buffer->colorLoc);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->indexBuffer);
   glDrawElements(GL_TRIANGLES, buffer->count*6, GL_UNSIGNED_SHORT, 0);
 }
@@ -227,9 +315,15 @@ void wrt_plugin_init(int handle){
   wrt_bind_method("super16.SpriteBuffer.setShape(_,_,_,_,_,_,_)", set_shape);
   wrt_bind_method("super16.SpriteBuffer.setSource(_,_,_,_,_)", set_source);
   wrt_bind_method("super16.SpriteBuffer.setTranslation(_,_,_)", set_translation);
+  wrt_bind_method("super16.SpriteBuffer.offsetTranslation(_,_,_)", offset_translation);
   wrt_bind_method("super16.SpriteBuffer.setRotation(_,_)", set_rotation);
+  wrt_bind_method("super16.SpriteBuffer.offsetRotation(_,_)", offset_rotation);
   wrt_bind_method("super16.SpriteBuffer.setScale(_,_,_)", set_scale);
+  wrt_bind_method("super16.SpriteBuffer.offsetScale(_,_,_)", offset_scale);
   wrt_bind_method("super16.SpriteBuffer.setPrio(_,_)", set_prio);
+  wrt_bind_method("super16.SpriteBuffer.setColor(_,_,_,_)", set_color);
+  wrt_bind_method("super16.SpriteBuffer.setOpacity(_,_)", set_opacity);
+  wrt_bind_method("super16.SpriteBuffer.setIntensity(_,_)", set_int);
   wrt_bind_method("super16.SpriteBuffer.getPrio(_)", get_prio);
   wrt_bind_method("super16.SpriteBuffer.update()", update);
   wrt_bind_method("super16.SpriteBuffer.draw()", draw);

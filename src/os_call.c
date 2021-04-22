@@ -1,4 +1,5 @@
 //adapted from Boby Thomas pazheparampil - march 2006
+#include <stdio.h>
 #include <string.h>
 #if defined(_WIN32)
   #include <windows.h>
@@ -10,6 +11,7 @@
 
 #include "os_call.h"
 
+#define RTLD_DEFAULT 0
 #define RTLD_LAZY   1
 #define RTLD_NOW    2
 #define RTLD_GLOBAL 4
@@ -36,6 +38,7 @@ static BOOL PrintErrorMessage(DWORD dwErrorCode)
 
 void* wrt_dlopen(const char *pcDllname)
 {
+  puts(pcDllname);
     #if defined(_WIN32)
       void* handle = (void*)LoadLibrary(pcDllname);
       if(handle == NULL) {
@@ -44,9 +47,12 @@ void* wrt_dlopen(const char *pcDllname)
       }
       return handle;
     #elif defined(__GNUC__)
-      void* handle = dlopen(pcDllname, RTLD_NOW);
+      void* handle = dlopen(pcDllname, RTLD_DEFAULT);
       if(handle == NULL) printf("Error loading %s. Reason %s\n", pcDllname, dlerror());
+      printf("Loaded posix plugin %s\n", pcDllname);
       return handle;
+    #else
+      printf("Error: Native Plugin loading is not supported by platform\n");
     #endif
 }
 
